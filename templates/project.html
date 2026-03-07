@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Projekt: {{ project_name }} - Kali ReconDash{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0">Projekt: <span class="text-primary">{{ project_name }}</span></h3>
+    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Powrót</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white fw-bold">Zapisane raporty i logi</div>
+    <ul class="list-group list-group-flush">
+        {% for file in files %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-file-text me-2"></i>{{ file }}</span>
+                <a href="{{ url_for('download_file', project=project_name, filename=file) }}" class="btn btn-sm btn-success">Pobierz</a>
+            </li>
+        {% else %}
+            <li class="list-group-item text-muted">Brak plików w tym projekcie. Trwa skanowanie lub wystąpił błąd.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

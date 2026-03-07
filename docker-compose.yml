@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  recon-web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./projects:/app/projects
+    restart: unless-stopped

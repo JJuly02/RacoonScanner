@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Strona Główna - Kali ReconDash{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm mb-5">
+    <div class="card-header bg-white fw-bold">Nowe zadanie Recon</div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('index') }}">
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Nazwa Projektu</label>
+                    <input type="text" class="form-control" name="project_name" placeholder="np. target_xyz" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Cel (Target URL / IP)</label>
+                    <input type="text" class="form-control" name="target" placeholder="np. domain.com" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Narzędzie</label>
+                    <select class="form-select" name="tool">
+                        <option value="ping">Szybki Ping</option>
+                        <option value="nmap_fast">Nmap (-F)</option>
+                        <option value="whatweb">WhatWeb</option>
+                        <option value="dnsrecon">DNSRecon</option>
+                        <option value="sqlmap_test">SQLMap</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-dark">Uruchom Recon</button>
+        </form>
+    </div>
+</div>
+
+<h4 class="mb-3">Aktywne Projekty</h4>
+<ul class="list-group shadow-sm">
+    {% for project in projects %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <strong>{{ project }}</strong>
+            <a href="{{ url_for('view_project', project_name=project) }}" class="btn btn-sm btn-outline-primary">Otwórz folder</a>
+        </li>
+    {% else %}
+        <li class="list-group-item text-muted text-center py-4">Brak projektów. Uruchom pierwsze skanowanie!</li>
+    {% endfor %}
+</ul>
+{% endblock %}

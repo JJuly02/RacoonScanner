@@ -1,13 +1,32 @@
 import os
+import secrets
 import subprocess
 from flask import Flask, render_template, request, send_from_directory, flash, redirect, url_for
 
 app = Flask(__name__)
-app.secret_key = 'super-secret-pentest-key' # W produkcji warto to zmienić
-PROJECTS_DIR = os.path.join(os.getcwd(), 'projects')
+app.secret_key = os.getenv('SECRET_KEY')
 
-# Upewnij się, że główny katalog projektów istnieje
+
+# --- KONFIGURACJA ŚCIEŻEK ---
+PROJECTS_DIR = os.path.join(os.getcwd(), 'projects')
+PRIVATE_DIR = os.path.join(os.getcwd(), 'private')
+SECRET_KEY_FILE = os.path.join(PRIVATE_DIR, 'secret.key')
+
 os.makedirs(PROJECTS_DIR, exist_ok=True)
+os.makedirs(PRIVATE_DIR, exist_ok=True)
+
+# --- ZARZĄDZANIE KLUCZEM (SECRET KEY) ---
+if os.path.exists(SECRET_KEY_FILE):
+    # Wczytujemy istniejący klucz
+    with open(SECRET_KEY_FILE, 'r') as key_file:
+        app.secret_key = key_file.read().strip()
+else:
+    # Generujemy nowy, silny klucz (64 znaki hex)
+    new_secret_key = secrets.token_hex(32)
+    with open(SECRET_KEY_FILE, 'w') as key_file:
+        key_file.write(new_secret_key)
+    app.secret_key = new_secret_key
+    print("[*] Wygenerowano nowy klucz aplikacji w folderze 'private/'.")
 
 @app.route('/', methods=['GET', 'POST'])
 def index():

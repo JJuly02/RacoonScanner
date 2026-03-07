@@ -1,0 +1,13 @@
+# Ignoruj folder z sekretami
+private/
+
+# Ignoruj folder z wynikami reconu (nie chcemy wycieku danych klientów!)
+projects/
+
+# Ignoruj środowiska wirtualne Pythona
+venv/
+.env
+
+# Ignoruj pliki tymczasowe Pythona i cache
+__pycache__/
+*.pyc

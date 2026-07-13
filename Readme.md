@@ -57,7 +57,5 @@ ogranicza dozwolone cele. Każde uruchomienie trafia do `private/audit.log`.
 ## Testy
 
 ```bash
-.venv/bin/python -m pytest -q      # lub: .venv/bin/python tests/run_smoke.py
+.venv/bin/python tests/run_smoke.py
 ```
-
-Plan rozwoju: [INSTRUKCJE.md](INSTRUKCJE.md).

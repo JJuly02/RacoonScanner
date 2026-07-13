@@ -1,0 +1,7 @@
+# Trzymaj paczkę (git archive / "Download ZIP" / źródła release) minimalną —
+# tylko to, co potrzebne do zbudowania i uruchomienia aplikacji.
+tests/          export-ignore
+docs/           export-ignore
+.gitignore      export-ignore
+.gitattributes  export-ignore
+.github/        export-ignore

@@ -12,3 +12,7 @@ venv/
 # Ignoruj pliki tymczasowe Pythona i cache
 __pycache__/
 *.pyc
+
+# Wewnętrzna roadmapa (lokalna, nie publikujemy)
+.INSTRUKCJE.md
+INSTRUKCJE.md

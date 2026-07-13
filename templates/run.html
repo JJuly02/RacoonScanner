@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Run {{ run_id }} - RacoonScanner{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0">Run: <span class="text-primary">{{ run_id }}</span></h3>
+    <a href="{{ url_for('view_project', project=project) }}" class="btn btn-outline-secondary">Projekt</a>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4"><b>Cel:</b> <code id="target">{{ meta.target }}</code></div>
+            <div class="col-md-4"><b>Workflow:</b> {{ meta.workflow }}</div>
+            <div class="col-md-4"><b>Status:</b> <span id="status" class="badge bg-secondary">{{ meta.status }}</span></div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white fw-bold">Kroki pipeline</div>
+    <ul class="list-group list-group-flush" id="stages"></ul>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white fw-bold">Log</div>
+    <div class="card-body"><pre id="log" class="mb-0 small text-muted">…</pre></div>
+</div>
+
+<div id="done-actions" class="mb-5" style="display:none">
+    <a href="{{ url_for('run_report', project=project, run_id=run_id) }}" class="btn btn-success" target="_blank">
+        <i class="bi bi-file-earmark-text"></i> Otwórz raport
+    </a>
+    <a href="{{ url_for('run_export', project=project, run_id=run_id) }}" class="btn btn-outline-secondary">
+        Eksport JSON
+    </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var STATUS_URL = "{{ url_for('run_status', project=project, run_id=run_id) }}";
+var badge = {done:'success', error:'danger', running:'primary', skipped:'secondary',
+             unavailable:'warning', pending:'light text-dark', queued:'secondary'};
+function render(d){
+  document.getElementById('status').textContent = d.status;
+  document.getElementById('status').className = 'badge bg-' + (badge[d.status]||'secondary');
+  var ul = document.getElementById('stages'); ul.innerHTML = '';
+  (d.stages||[]).forEach(function(s){
+    var li = document.createElement('li');
+    li.className = 'list-group-item d-flex justify-content-between align-items-center';
+    li.innerHTML = '<span>' + s.name + ' <small class="text-muted">(' + s.adapter + ')</small></span>' +
+      '<span><span class="badge bg-' + (badge[s.status]||'secondary') + '">' + s.status + '</span> ' +
+      (s.findings ? '<span class="badge bg-dark ms-1">' + s.findings + '</span>' : '') + '</span>';
+    ul.appendChild(li);
+  });
+  if(d.log) document.getElementById('log').textContent = d.log.join('\n');
+  document.getElementById('done-actions').style.display = (d.status==='done') ? '' : 'none';
+  return d.status;
+}
+function poll(){
+  fetch(STATUS_URL).then(r=>r.json()).then(function(d){
+    var st = render(d);
+    if(st!=='done' && st!=='error') setTimeout(poll, 1500);
+  }).catch(function(){ setTimeout(poll, 3000); });
+}
+poll();
+</script>
+{% endblock %}

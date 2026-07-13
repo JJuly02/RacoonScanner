@@ -1,0 +1,13 @@
+[
+  {
+    "target": "http://45.33.32.156",
+    "http_status": 200,
+    "plugins": {
+      "Apache": {"version": ["2.4.6"], "string": ["Apache/2.4.6"]},
+      "PHP": {"version": ["5.6.40"]},
+      "WordPress": {"version": ["5.2"]},
+      "Country": {"string": ["UNITED STATES"]},
+      "HTTPServer": {"string": ["Apache/2.4.6"]}
+    }
+  }
+]

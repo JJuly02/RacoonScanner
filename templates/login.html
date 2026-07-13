@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Logowanie - RacoonScanner{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-4">
+    <div class="card shadow-sm mt-5">
+      <div class="card-header bg-white fw-bold">Logowanie</div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="mb-3">
+            <label class="form-label">Użytkownik</label>
+            <input type="text" class="form-control" name="user" value="admin" autofocus>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Hasło</label>
+            <input type="password" class="form-control" name="password" required>
+          </div>
+          <button class="btn btn-dark w-100" type="submit">Zaloguj</button>
+        </form>
+      </div>
+    </div>
+    <p class="text-muted small mt-3 text-center">
+      Hasło startowe generowane jest przy pierwszym uruchomieniu (patrz logi) lub
+      ustaw <code>RACOON_PASSWORD</code>.
+    </p>
+  </div>
+</div>
+{% endblock %}

@@ -6,6 +6,7 @@ projects/
 
 # Ignoruj środowiska wirtualne Pythona
 venv/
+.venv/
 .env
 
 # Ignoruj pliki tymczasowe Pythona i cache

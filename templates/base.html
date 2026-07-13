@@ -3,14 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Kali Recon Dashboard{% endblock %}</title>
+    <title>{% block title %}RacoonScanner{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">Kali ReconDash</a>
+            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">🦝 RacoonScanner</a>
+            {% if session.get('user') %}
+            <div class="ms-auto text-white-50 small">
+                {{ session['user'] }} · <a class="link-light" href="{{ url_for('logout') }}">wyloguj</a>
+            </div>
+            {% endif %}
         </div>
     </nav>
 
@@ -26,10 +32,10 @@
           {% endif %}
         {% endwith %}
 
-        {% block content %}
-        {% endblock %}
+        {% block content %}{% endblock %}
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
 </body>
 </html>

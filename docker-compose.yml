@@ -4,6 +4,12 @@ services:
     build: .
     ports:
       - "5000:5000"
+    environment:
+      # Ustaw własne hasło; bez tego generowane jest losowe (patrz logi kontenera).
+      - RACOON_USER=${RACOON_USER:-admin}
+      - RACOON_PASSWORD=${RACOON_PASSWORD:-}
+      - FLASK_DEBUG=0
     volumes:
-      - ./projects:/app/projects
+      - ./projects:/app/projects   # wyniki reconu (poza gitem)
+      - ./private:/app/private     # trwały secret.key + auth.json (poza gitem)
     restart: unless-stopped

@@ -1,0 +1,14 @@
+name: "DNS + Web (lekki)"
+description: >
+  Szybki, nieinwazyjny recon: enumeracja DNS, skan portów oraz fingerprint
+  technologii web. Bez aktywnego wykrywania podatności (brak sqlmap/INCLUDED).
+stages:
+  - name: "DNS enumeration"
+    adapter: dnsrecon
+  - name: "Skan portów i usług"
+    adapter: nmap
+    options:
+      fast: true
+  - name: "Fingerprint web"
+    adapter: whatweb
+    requires: web_targets

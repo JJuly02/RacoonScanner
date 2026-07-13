@@ -1,24 +1,42 @@
 {% extends "base.html" %}
-
-{% block title %}Projekt: {{ project_name }} - Kali ReconDash{% endblock %}
-
+{% block title %}Projekt: {{ project }} - RacoonScanner{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="mb-0">Projekt: <span class="text-primary">{{ project_name }}</span></h3>
+    <h3 class="mb-0">Projekt: <span class="text-primary">{{ project }}</span></h3>
     <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Powrót</a>
 </div>
 
 <div class="card shadow-sm">
-    <div class="card-header bg-white fw-bold">Zapisane raporty i logi</div>
-    <ul class="list-group list-group-flush">
-        {% for file in files %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-file-text me-2"></i>{{ file }}</span>
-                <a href="{{ url_for('download_file', project=project_name, filename=file) }}" class="btn btn-sm btn-success">Pobierz</a>
-            </li>
+    <div class="card-header bg-white fw-bold">Uruchomienia (runs)</div>
+    <div class="table-responsive">
+    <table class="table mb-0 align-middle">
+        <thead class="table-light">
+            <tr><th>Run</th><th>Workflow</th><th>Cel</th><th>Status</th><th>Risk</th><th>Znalezisk</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for r in runs %}
+            <tr>
+                <td><code>{{ r.run_id }}</code></td>
+                <td>{{ r.workflow }}</td>
+                <td><code>{{ r.target }}</code></td>
+                <td>
+                    {% set s = r.status %}
+                    <span class="badge bg-{{ 'success' if s=='done' else ('danger' if s=='error' else 'secondary') }}">{{ s }}</span>
+                </td>
+                <td>{{ r.risk.risk_score if r.risk else '-' }}</td>
+                <td>{{ r.findings_total }}</td>
+                <td class="text-end">
+                    <a href="{{ url_for('view_run', project=project, run_id=r.run_id) }}" class="btn btn-sm btn-outline-primary">Szczegóły</a>
+                    {% if r.status == 'done' %}
+                    <a href="{{ url_for('run_report', project=project, run_id=r.run_id) }}" class="btn btn-sm btn-success" target="_blank">Raport</a>
+                    {% endif %}
+                </td>
+            </tr>
         {% else %}
-            <li class="list-group-item text-muted">Brak plików w tym projekcie. Trwa skanowanie lub wystąpił błąd.</li>
+            <tr><td colspan="7" class="text-muted text-center py-4">Brak uruchomień.</td></tr>
         {% endfor %}
-    </ul>
+        </tbody>
+    </table>
+    </div>
 </div>
 {% endblock %}

@@ -1,0 +1,25 @@
+name: "Full Recon"
+description: >
+  Pełny łańcuch pierwszej fazy pentestu: discovery (DNS + ICMP) → skan portów i
+  usług → fingerprint web → wykrywanie SQLi/LFI/RFI. Każdy krok karmi kolejny.
+stages:
+  - name: "DNS enumeration"
+    adapter: dnsrecon
+  - name: "Host discovery (ICMP)"
+    adapter: ping
+  - name: "Skan portów i usług"
+    adapter: nmap
+    options:
+      fast: true
+  - name: "Fingerprint web"
+    adapter: whatweb
+    requires: web_targets
+  - name: "SQL injection"
+    adapter: sqlmap
+    requires: web_targets
+  - name: "LFI / RFI (INCLUDED)"
+    adapter: included
+    requires: web_targets
+    options:
+      profile: all
+      param: page

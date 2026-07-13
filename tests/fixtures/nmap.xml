@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<nmaprun scanner="nmap">
+  <host>
+    <status state="up"/>
+    <address addr="45.33.32.156" addrtype="ipv4"/>
+    <ports>
+      <port protocol="tcp" portid="22">
+        <state state="open"/>
+        <service name="ssh" product="OpenSSH" version="7.4"/>
+      </port>
+      <port protocol="tcp" portid="80">
+        <state state="open"/>
+        <service name="http" product="Apache httpd" version="2.4.6"/>
+      </port>
+      <port protocol="tcp" portid="443">
+        <state state="open"/>
+        <service name="https" product="nginx"/>
+      </port>
+      <port protocol="tcp" portid="23">
+        <state state="open"/>
+        <service name="telnet"/>
+      </port>
+      <port protocol="tcp" portid="3306">
+        <state state="closed"/>
+        <service name="mysql"/>
+      </port>
+    </ports>
+  </host>
+</nmaprun>

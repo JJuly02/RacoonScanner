@@ -2,36 +2,53 @@
 {% block title %}Run {{ run_id }} - RacoonScanner{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="mb-0">Run: <span class="text-primary">{{ run_id }}</span></h3>
-    <a href="{{ url_for('view_project', project=project) }}" class="btn btn-outline-secondary">Projekt</a>
+    <h3 class="mb-0">Run <span class="text-accent text-mono">{{ run_id }}</span></h3>
+    <a href="{{ url_for('view_project', project=project) }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Projekt
+    </a>
 </div>
 
 <div class="card shadow-sm mb-4">
     <div class="card-body">
-        <div class="row">
-            <div class="col-md-4"><b>Cel:</b> <code id="target">{{ meta.target }}</code></div>
-            <div class="col-md-4"><b>Workflow:</b> {{ meta.workflow }}</div>
-            <div class="col-md-4"><b>Status:</b> <span id="status" class="badge bg-secondary">{{ meta.status }}</span></div>
+        <div class="row g-3">
+            <div class="col-md-3"><div class="lbl small text-muted">Cel</div><code id="target">{{ meta.target }}</code></div>
+            <div class="col-md-3"><div class="lbl small text-muted">Workflow</div>{{ meta.workflow }}</div>
+            <div class="col-md-3"><div class="lbl small text-muted">Tryb</div><span class="sev-chip sev-info">{{ meta.mode_label or meta.mode }}</span></div>
+            <div class="col-md-3"><div class="lbl small text-muted">Status</div>
+                <span class="d-inline-flex align-items-center gap-2"><span id="statusDot" class="status-dot st-{{ meta.status }}"></span><span id="status">{{ meta.status }}</span></span>
+            </div>
         </div>
     </div>
 </div>
 
+<div class="row g-3 mb-4" id="sevTiles">
+    <div class="col"><div class="stat-tile"><div class="num text-accent" id="riskScore">–</div><div class="lbl">Risk score</div></div></div>
+    <div class="col"><div class="stat-tile"><div class="num" style="color:var(--sev-critical)" id="c-critical">0</div><div class="lbl" style="color:var(--sev-critical)">Critical</div></div></div>
+    <div class="col"><div class="stat-tile"><div class="num" style="color:var(--sev-high)" id="c-high">0</div><div class="lbl" style="color:var(--sev-high)">High</div></div></div>
+    <div class="col"><div class="stat-tile"><div class="num" style="color:var(--sev-medium)" id="c-medium">0</div><div class="lbl" style="color:var(--sev-medium)">Medium</div></div></div>
+    <div class="col"><div class="stat-tile"><div class="num" style="color:var(--sev-low)" id="c-low">0</div><div class="lbl" style="color:var(--sev-low)">Low</div></div></div>
+    <div class="col"><div class="stat-tile"><div class="num" style="color:var(--sev-info)" id="c-info">0</div><div class="lbl" style="color:var(--sev-info)">Info</div></div></div>
+</div>
+
 <div class="card shadow-sm mb-4">
-    <div class="card-header bg-white fw-bold">Kroki pipeline</div>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-diagram-3 me-2"></i>Kroki pipeline</span>
+        <span class="hint"><span id="findingsTotal">0</span> znalezisk łącznie</span>
+    </div>
     <ul class="list-group list-group-flush" id="stages"></ul>
 </div>
 
 <div class="card shadow-sm mb-4">
-    <div class="card-header bg-white fw-bold">Log</div>
-    <div class="card-body"><pre id="log" class="mb-0 small text-muted">…</pre></div>
+    <div class="card-header"><i class="bi bi-terminal me-2"></i>Log</div>
+    <div class="card-body"><pre id="log" class="mb-0 small text-muted" style="max-height:260px;overflow:auto">…</pre></div>
 </div>
 
 <div id="done-actions" class="mb-5" style="display:none">
-    <a href="{{ url_for('run_report', project=project, run_id=run_id) }}" class="btn btn-success" target="_blank">
+    <a href="{{ url_for('run_report', project=project, run_id=run_id) }}" class="btn btn-accent" target="_blank">
         <i class="bi bi-file-earmark-text"></i> Otwórz raport
     </a>
     <a href="{{ url_for('run_export', project=project, run_id=run_id) }}" class="btn btn-outline-secondary">
-        Eksport JSON
+        <i class="bi bi-filetype-json"></i> Eksport JSON
     </a>
 </div>
 {% endblock %}
@@ -39,18 +56,32 @@
 {% block scripts %}
 <script>
 var STATUS_URL = "{{ url_for('run_status', project=project, run_id=run_id) }}";
-var badge = {done:'success', error:'danger', running:'primary', skipped:'secondary',
-             unavailable:'warning', pending:'light text-dark', queued:'secondary'};
+var SEVS = ['critical','high','medium','low','info'];
+
 function render(d){
   document.getElementById('status').textContent = d.status;
-  document.getElementById('status').className = 'badge bg-' + (badge[d.status]||'secondary');
+  document.getElementById('statusDot').className = 'status-dot st-' + d.status;
+
+  var risk = d.risk || {counts:{}, risk_score:0};
+  document.getElementById('riskScore').textContent = risk.risk_score != null ? risk.risk_score : '–';
+  SEVS.forEach(function(s){ document.getElementById('c-'+s).textContent = (risk.counts && risk.counts[s]) || 0; });
+  document.getElementById('findingsTotal').textContent = d.findings_total || 0;
+
   var ul = document.getElementById('stages'); ul.innerHTML = '';
   (d.stages||[]).forEach(function(s){
     var li = document.createElement('li');
     li.className = 'list-group-item d-flex justify-content-between align-items-center';
-    li.innerHTML = '<span>' + s.name + ' <small class="text-muted">(' + s.adapter + ')</small></span>' +
-      '<span><span class="badge bg-' + (badge[s.status]||'secondary') + '">' + s.status + '</span> ' +
-      (s.findings ? '<span class="badge bg-dark ms-1">' + s.findings + '</span>' : '') + '</span>';
+    var note = s.note ? ' <small class="text-muted fst-italic">— ' + s.note + '</small>' : '';
+    var err = s.error ? ' <small class="sev-chip sev-critical ms-1">' + s.error + '</small>' : '';
+    li.innerHTML =
+      '<span class="d-inline-flex align-items-center gap-2">' +
+        '<span class="status-dot st-' + s.status + '"></span>' +
+        '<span>' + s.name + ' <small class="text-muted text-mono">(' + s.adapter + ')</small>' + note + err + '</span>' +
+      '</span>' +
+      '<span class="d-inline-flex align-items-center gap-2">' +
+        '<span class="sev-chip sev-info">' + s.status + '</span>' +
+        (s.findings ? '<span class="sev-chip sev-high"><span class="dot"></span>' + s.findings + '</span>' : '') +
+      '</span>';
     ul.appendChild(li);
   });
   if(d.log) document.getElementById('log').textContent = d.log.join('\n');

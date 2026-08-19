@@ -12,6 +12,7 @@ import subprocess
 from dataclasses import dataclass, field
 
 from ..findings import Finding
+from ..modes import Intensity
 
 
 class ToolUnavailable(RuntimeError):
@@ -40,6 +41,9 @@ def available(binary: str) -> bool:
 class ToolAdapter:
     name: str = ""
     binary: str = ""
+    # Domyślna intensywność — bezpośrednia, nieinwazyjna enumeracja.
+    # Adaptery pasywne (Shodan) i agresywne (sqlmap/INCLUDED) nadpisują to pole.
+    intensity: Intensity = Intensity.ACTIVE
 
     def is_available(self) -> bool:
         return available(self.binary)

@@ -1,0 +1,8 @@
+{
+  "cpes": ["cpe:/a:apache:http_server:2.4.49"],
+  "hostnames": ["www.example.com"],
+  "ip": "203.0.113.10",
+  "ports": [22, 23, 80, 443],
+  "tags": ["cloud"],
+  "vulns": ["CVE-2021-41773", "CVE-2021-42013"]
+}

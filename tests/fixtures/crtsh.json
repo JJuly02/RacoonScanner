@@ -1,0 +1,5 @@
+[
+  {"common_name": "example.com", "name_value": "example.com\nwww.example.com"},
+  {"common_name": "*.example.com", "name_value": "*.example.com\napi.example.com\nmail.example.com"},
+  {"common_name": "other.org", "name_value": "other.org"}
+]

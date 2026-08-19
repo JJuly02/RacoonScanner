@@ -55,6 +55,15 @@ def load_allowlist(private_dir: str) -> list[str]:
         return [ln.strip() for ln in fh if ln.strip() and not ln.startswith("#")]
 
 
+def allowlist_text(private_dir: str) -> str:
+    """Surowa treść pliku zakresu (z komentarzami) — do edytora reguł."""
+    path = _allowlist_path(private_dir)
+    if not os.path.exists(path):
+        return ""
+    with open(path, encoding="utf-8") as fh:
+        return fh.read()
+
+
 def in_scope(target: str, private_dir: str) -> tuple[bool, str]:
     """Sprawdza cel względem białej listy. Pusta lista => brak ograniczenia."""
     allow = load_allowlist(private_dir)
@@ -66,3 +75,38 @@ def in_scope(target: str, private_dir: str) -> tuple[bool, str]:
         if host == entry or host == e or host.endswith("." + e):
             return True, ""
     return False, f"Cel '{host}' spoza dozwolonego zakresu (scope_allowlist.txt)."
+
+
+def parse_target_list(raw: str) -> list[str]:
+    """Rozbija tekst (textarea/plik .txt) na listę czystych celów.
+
+    Format tolerancyjny (jak w ShodanScaner/targets.txt):
+      * jeden cel na linię,
+      * puste linie i linie zaczynające się od ``#`` pomijane,
+      * tekst po ``#`` traktowany jako komentarz,
+      * pierwsze pole przed przecinkiem to cel (reszta = opis),
+      * biały znak kończy token (np. ``url  # coś``).
+    Zwraca listę bez duplikatów, z zachowaniem kolejności.
+    """
+    out: list[str] = []
+    for line in (raw or "").splitlines():
+        line = line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        line = line.split(",", 1)[0].strip()
+        token = line.split()[0] if line.split() else ""
+        if token and token not in out:
+            out.append(token)
+    return out
+
+
+def save_allowlist(private_dir: str, entries: list[str]) -> None:
+    """Zapisuje białą listę zakresu (jeden wpis na linię)."""
+    path = _allowlist_path(private_dir)
+    os.makedirs(private_dir, exist_ok=True)
+    cleaned = [e.strip() for e in entries if e.strip() and not e.strip().startswith("#")]
+    with open(path, "w", encoding="utf-8") as fh:
+        if cleaned:
+            fh.write("\n".join(cleaned) + "\n")
+        else:
+            fh.write("")

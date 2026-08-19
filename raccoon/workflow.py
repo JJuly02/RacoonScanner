@@ -22,6 +22,7 @@ class Stage:
     adapter: str
     options: dict = field(default_factory=dict)
     requires: str | None = None   # klucz w shared context wymagany do uruchomienia
+    intensity: str | None = None  # nadpisuje intensywność adaptera (passive/active/aggressive)
 
 
 @dataclass
@@ -38,6 +39,7 @@ class Workflow:
                 adapter=s["adapter"],
                 options=s.get("options", {}) or {},
                 requires=s.get("requires"),
+                intensity=s.get("intensity"),
             )
             for s in data.get("stages", [])
         ]

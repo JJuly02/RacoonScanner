@@ -5,6 +5,7 @@ import re
 
 from ..findings import Confidence, Finding, Severity
 from ..netutil import host_of
+from ..modes import Intensity
 from .base import AdapterResult, RunContext, ToolAdapter
 
 _LOSS = re.compile(r"([\d.]+)%\s+packet loss")
@@ -13,6 +14,7 @@ _LOSS = re.compile(r"([\d.]+)%\s+packet loss")
 class PingAdapter(ToolAdapter):
     name = "ping"
     binary = "ping"
+    intensity = Intensity.ACTIVE
 
     def run(self, ctx: RunContext) -> AdapterResult:
         host = host_of(ctx.target)

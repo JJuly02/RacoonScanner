@@ -6,12 +6,14 @@ import os
 
 from ..findings import Confidence, Finding, Severity
 from ..netutil import host_of
+from ..modes import Intensity
 from .base import AdapterResult, RunContext, ToolAdapter
 
 
 class DnsreconAdapter(ToolAdapter):
     name = "dnsrecon"
     binary = "dnsrecon"
+    intensity = Intensity.ACTIVE
 
     def run(self, ctx: RunContext) -> AdapterResult:
         domain = host_of(ctx.target)

@@ -2,20 +2,33 @@
 {% block title %}Panel - RacoonScanner{% endblock %}
 {% block content %}
 
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-tile"><div class="num">{{ projects|length }}</div><div class="lbl">Projekty</div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-tile"><div class="num">{{ workflows|length }}</div><div class="lbl">Workflow</div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-tile"><div class="num text-accent">{{ runs_total }}</div><div class="lbl">Uruchomienia</div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-tile"><div class="num">3</div><div class="lbl">Tryby pracy</div></div>
+    </div>
+</div>
+
 <div class="card shadow-sm mb-4">
-    <div class="card-header bg-white fw-bold">Nowy skan (workflow)</div>
+    <div class="card-header d-flex align-items-center">
+        <i class="bi bi-radar me-2 text-accent"></i>Nowy skan (workflow)
+    </div>
     <div class="card-body">
-        <form method="POST" action="{{ url_for('index') }}">
+        <form method="POST" action="{{ url_for('index') }}" enctype="multipart/form-data" id="scanForm">
             <div class="row g-3 mb-3">
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <label class="form-label">Nazwa projektu</label>
                     <input type="text" class="form-control" name="project_name" placeholder="np. target_xyz" required>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Cel (URL / host / IP)</label>
-                    <input type="text" class="form-control" name="target" placeholder="np. scanme.nmap.org" required>
-                </div>
-                <div class="col-md-5">
+                <div class="col-md-8">
                     <label class="form-label">Workflow</label>
                     <select class="form-select" name="workflow" id="wf">
                         {% for slug, wf in workflows %}
@@ -25,24 +38,67 @@
                     <div class="form-text" id="wf-desc"></div>
                 </div>
             </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Cel <span class="hint">(URL / host / IP)</span></label>
+                    <input type="text" class="form-control" name="target" placeholder="np. scanme.nmap.org">
+                    <div class="form-text">Pojedynczy cel — lub użyj listy poniżej dla wielu.</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label d-flex justify-content-between">
+                        <span>Wiele celów <span class="hint">(jeden na linię)</span></span>
+                        <label class="btn btn-sm btn-outline-secondary py-0 px-2 mb-0" style="cursor:pointer">
+                            <i class="bi bi-upload"></i> Wczytaj .txt
+                            <input type="file" name="targets_file" accept=".txt,.csv" hidden id="targetsFile">
+                        </label>
+                    </label>
+                    <textarea class="form-control text-mono" name="targets" id="targetsArea" rows="3"
+                              placeholder="host1.example.com&#10;203.0.113.10&#10;https://app.example.com   # komentarze po # są ignorowane"></textarea>
+                    <div class="form-text"><span id="tCount">0</span> celów wykrytych · przecinek/# = komentarz</div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label d-block">Tryb pracy</label>
+                <div class="btn-group flex-wrap" role="group" aria-label="Tryb pracy">
+                    {% for m in modes %}
+                    <input type="radio" class="btn-check" name="mode" id="mode-{{ m.value }}"
+                           value="{{ m.value }}" data-desc="{{ m.description }}"
+                           {% if m.value == default_mode %}checked{% endif %}>
+                    <label class="btn btn-outline-warning" for="mode-{{ m.value }}">
+                        {% if m.value == 'passive' %}<i class="bi bi-eye me-1"></i>{% elif m.value == 'active' %}<i class="bi bi-broadcast me-1"></i>{% else %}<i class="bi bi-lightning-charge me-1"></i>{% endif %}{{ m.label }}
+                    </label>
+                    {% endfor %}
+                </div>
+                <div class="form-text" id="mode-desc"></div>
+            </div>
+
             <div class="form-check mb-3">
                 <input class="form-check-input" type="checkbox" name="authorized" id="authorized">
                 <label class="form-check-label" for="authorized">
-                    Potwierdzam, że mam autoryzację do skanowania tego celu.
+                    Potwierdzam, że mam <strong>autoryzację</strong> do skanowania podanych celów.
                 </label>
             </div>
-            <button type="submit" class="btn btn-dark"><i class="bi bi-play-fill"></i> Uruchom workflow</button>
+            <button type="submit" class="btn btn-accent"><i class="bi bi-play-fill"></i> Uruchom workflow</button>
+            <a href="{{ url_for('rules') }}" class="btn btn-outline-secondary ms-2">
+                <i class="bi bi-shield-check"></i> Reguły zakresu
+            </a>
         </form>
     </div>
 </div>
 
-<h4 class="mb-3">Projekty</h4>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="bi bi-folder2-open me-2"></i>Projekty</h4>
+</div>
 <ul class="list-group shadow-sm">
     {% for project in projects %}
         <li class="list-group-item d-flex justify-content-between align-items-center">
-            <strong><i class="bi bi-folder me-2"></i>{{ project }}</strong>
+            <a href="{{ url_for('view_project', project=project) }}" class="fw-semibold">
+                <i class="bi bi-folder me-2 text-accent"></i>{{ project }}
+            </a>
             <span>
-                <a href="{{ url_for('view_project', project=project) }}" class="btn btn-sm btn-outline-primary">Otwórz</a>
+                <a href="{{ url_for('view_project', project=project) }}" class="btn btn-sm btn-outline-warning">Otwórz</a>
                 <form method="POST" action="{{ url_for('delete_project', project=project) }}" class="d-inline"
                       onsubmit="return confirm('Usunąć projekt {{ project }} wraz z wynikami?');">
                     <button class="btn btn-sm btn-outline-danger">Usuń</button>
@@ -60,5 +116,35 @@
   var wf = document.getElementById('wf'), desc = document.getElementById('wf-desc');
   function upd(){ desc.textContent = wf.options[wf.selectedIndex].dataset.desc || ''; }
   wf.addEventListener('change', upd); upd();
+
+  var modeInputs = document.querySelectorAll('input[name="mode"]');
+  var modeDesc = document.getElementById('mode-desc');
+  function updMode(){
+    modeInputs.forEach(function(i){ if(i.checked) modeDesc.textContent = i.dataset.desc || ''; });
+  }
+  modeInputs.forEach(function(i){ i.addEventListener('change', updMode); });
+  updMode();
+
+  // Licznik celów w textarea (ignoruje puste linie i komentarze #)
+  var area = document.getElementById('targetsArea'), cnt = document.getElementById('tCount');
+  function countTargets(){
+    var n = (area.value || '').split('\n').map(function(l){
+      return l.split('#')[0].split(',')[0].trim();
+    }).filter(Boolean).length;
+    cnt.textContent = n;
+  }
+  area.addEventListener('input', countTargets); countTargets();
+
+  // Podgląd wczytanego pliku .txt do textarea
+  var file = document.getElementById('targetsFile');
+  file.addEventListener('change', function(){
+    var f = file.files[0]; if(!f) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      area.value = (area.value ? area.value.replace(/\s*$/, '') + '\n' : '') + e.target.result;
+      countTargets();
+    };
+    reader.readAsText(f);
+  });
 </script>
 {% endblock %}

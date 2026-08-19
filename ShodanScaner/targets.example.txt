@@ -1,0 +1,9 @@
+# Zakres zewnętrzny klienta — autoryzacja z dnia 2026-08-19
+# Można mieszać domeny, adresy www, IP i CIDR. Komentarze po # są ignorowane.
+
+your.domena.com
+mini.domena.com
+https://sklep.domena.com/panel        # URL — ścieżka i port zostaną obcięte
+poczta.domena.com, serwer pocztowy    # opis po przecinku
+203.0.113.10                          # zwykłe IP też przejdzie
+198.51.100.0/29                       # CIDR (wymaga --expand-cidr)

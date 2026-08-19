@@ -1,0 +1,8 @@
+	Sharename       Type      Comment
+	---------       ----      -------
+	print$          Disk      Printer Drivers
+	home            Disk      INFREIGHT Samba
+	dev             Disk      DEVenv
+	notes           Disk      CheckIT
+	IPC$            IPC       IPC Service (DEVSM)
+SMB1 disabled -- no workgroup available

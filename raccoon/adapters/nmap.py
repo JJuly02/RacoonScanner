@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 
 from ..findings import Confidence, Finding, Severity
 from ..netutil import host_of, is_web_port, web_url
+from ..modes import Intensity
 from .base import AdapterResult, RunContext, ToolAdapter
 
 # Usługi, których gołe wystawienie na świat traktujemy jako podwyższone ryzyko.
@@ -24,9 +25,33 @@ _RISKY = {
 }
 
 
+# Mapowanie usługi/portu -> klucz artefaktu, który wyzwala dedykowany footprinting.
+def _service_target_keys(port: int, service: str) -> list[str]:
+    svc = (service or "").lower()
+    keys = []
+    if port in (445, 139) or "microsoft-ds" in svc or "netbios" in svc or "smb" in svc:
+        keys.append("smb_targets")
+    if port == 21 or "ftp" in svc:
+        keys.append("ftp_targets")
+    if port == 161 or "snmp" in svc:
+        keys.append("snmp_targets")
+    if port in (3306, 5432, 1433, 1521, 27017, 6379) or any(
+            d in svc for d in ("mysql", "postgres", "ms-sql", "mssql", "oracle", "mongod", "redis")):
+        keys.append("db_targets")
+    if port in (25, 110, 143, 465, 587, 993, 995) or any(
+            m in svc for m in ("smtp", "imap", "pop3")):
+        keys.append("mail_targets")
+    if port == 3389 or "rdp" in svc or "ms-wbt" in svc:
+        keys.append("rdp_targets")
+    if port == 22 or "ssh" in svc:
+        keys.append("ssh_targets")
+    return keys
+
+
 class NmapAdapter(ToolAdapter):
     name = "nmap"
     binary = "nmap"
+    intensity = Intensity.ACTIVE
 
     def run(self, ctx: RunContext) -> AdapterResult:
         hosts = ctx.shared.get("hosts") or [host_of(ctx.target)]
@@ -56,6 +81,7 @@ class NmapAdapter(ToolAdapter):
         findings: list[Finding] = []
         open_ports: list[dict] = []
         web_targets: list[str] = []
+        service_targets: dict[str, list[str]] = {}
         if not raw_xml.strip():
             return AdapterResult()
         try:
@@ -111,9 +137,13 @@ class NmapAdapter(ToolAdapter):
                     ))
                 if is_web_port(portid, svc):
                     web_targets.append(web_url(addr, portid, svc))
+                for key in _service_target_keys(portid, svc):
+                    service_targets.setdefault(key, []).append(addr)
         artifacts: dict = {}
         if open_ports:
             artifacts["open_ports"] = open_ports
         if web_targets:
             artifacts["web_targets"] = list(dict.fromkeys(web_targets))
+        for key, hosts in service_targets.items():
+            artifacts[key] = list(dict.fromkeys(hosts))
         return AdapterResult(findings=findings, artifacts=artifacts)

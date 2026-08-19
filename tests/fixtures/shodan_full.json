@@ -1,0 +1,17 @@
+{
+  "ip_str": "203.0.113.10",
+  "hostnames": ["www.example.com"],
+  "ports": [80, 23],
+  "vulns": ["CVE-2020-0001"],
+  "data": [
+    {
+      "port": 80, "transport": "tcp",
+      "product": "nginx", "version": "1.18.0",
+      "http": {"title": "Home"}
+    },
+    {
+      "port": 23, "transport": "tcp", "product": "", "version": "",
+      "vulns": {"CVE-2019-1234": {"summary": "telnet weakness"}}
+    }
+  ]
+}

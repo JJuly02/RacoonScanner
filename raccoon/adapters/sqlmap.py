@@ -4,6 +4,7 @@ from __future__ import annotations
 import re
 
 from ..findings import Confidence, Finding, Severity
+from ..modes import Intensity
 from .base import AdapterResult, RunContext, ToolAdapter
 
 _PARAM = re.compile(r"Parameter:\s*(?P<param>[^\(]+)\((?P<place>[^)]+)\)")
@@ -15,6 +16,7 @@ _NOT_VULN = re.compile(r"all tested parameters do not appear to be injectable", 
 class SqlmapAdapter(ToolAdapter):
     name = "sqlmap"
     binary = "sqlmap"
+    intensity = Intensity.AGGRESSIVE
 
     def run(self, ctx: RunContext) -> AdapterResult:
         urls = ctx.shared.get("web_targets") or [ctx.target]

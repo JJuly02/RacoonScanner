@@ -10,6 +10,7 @@ import json
 import os
 
 from ..findings import Confidence, Finding, Severity
+from ..modes import Intensity
 from .base import AdapterResult, RunContext, ToolAdapter
 
 # Moduły RCE (wykonanie kodu) vs. read (odczyt plików).
@@ -19,6 +20,7 @@ _RCE_MODULES = {"data", "input", "expect", "zip_phar", "log_poison", "filter_cha
 class IncludedAdapter(ToolAdapter):
     name = "included"
     binary = "included"
+    intensity = Intensity.AGGRESSIVE
 
     def run(self, ctx: RunContext) -> AdapterResult:
         param = ctx.options.get("param", "page")

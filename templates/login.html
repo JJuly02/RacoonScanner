@@ -3,8 +3,13 @@
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-4">
-    <div class="card shadow-sm mt-5">
-      <div class="card-header bg-white fw-bold">Logowanie</div>
+    <div class="text-center mt-5 mb-3">
+      <div style="font-size:2.4rem">🦝</div>
+      <h4 class="fw-bold mb-0">RacoonScanner</h4>
+      <div class="hint">Orkiestracja recon &amp; audyt zgodności</div>
+    </div>
+    <div class="card shadow-sm">
+      <div class="card-header"><i class="bi bi-shield-lock me-2 text-accent"></i>Logowanie</div>
       <div class="card-body">
         <form method="POST">
           <div class="mb-3">
@@ -15,11 +20,11 @@
             <label class="form-label">Hasło</label>
             <input type="password" class="form-control" name="password" required>
           </div>
-          <button class="btn btn-dark w-100" type="submit">Zaloguj</button>
+          <button class="btn btn-accent w-100" type="submit"><i class="bi bi-box-arrow-in-right"></i> Zaloguj</button>
         </form>
       </div>
     </div>
-    <p class="text-muted small mt-3 text-center">
+    <p class="hint mt-3 text-center">
       Hasło startowe generowane jest przy pierwszym uruchomieniu (patrz logi) lub
       ustaw <code>RACOON_PASSWORD</code>.
     </p>

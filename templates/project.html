@@ -2,38 +2,55 @@
 {% block title %}Projekt: {{ project }} - RacoonScanner{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="mb-0">Projekt: <span class="text-primary">{{ project }}</span></h3>
-    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Powrót</a>
+    <h3 class="mb-0"><i class="bi bi-folder2-open me-2 text-accent"></i>{{ project }}</h3>
+    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Panel</a>
 </div>
 
 <div class="card shadow-sm">
-    <div class="card-header bg-white fw-bold">Uruchomienia (runs)</div>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-clock-history me-2"></i>Uruchomienia ({{ runs|length }})</span>
+    </div>
     <div class="table-responsive">
-    <table class="table mb-0 align-middle">
-        <thead class="table-light">
-            <tr><th>Run</th><th>Workflow</th><th>Cel</th><th>Status</th><th>Risk</th><th>Znalezisk</th><th></th></tr>
+    <table class="table table-hover mb-0 align-middle">
+        <thead>
+            <tr class="text-muted small text-uppercase">
+                <th>Run</th><th>Workflow</th><th>Tryb</th><th>Cel</th>
+                <th>Status</th><th>Risk</th><th>Severity</th><th></th>
+            </tr>
         </thead>
         <tbody>
         {% for r in runs %}
+            {% set s = r.status %}
+            {% set counts = (r.risk.counts if r.risk else {}) or {} %}
             <tr>
-                <td><code>{{ r.run_id }}</code></td>
+                <td><code class="small">{{ r.run_id }}</code></td>
                 <td>{{ r.workflow }}</td>
-                <td><code>{{ r.target }}</code></td>
+                <td><span class="sev-chip sev-info">{{ r.mode_label or r.mode or '—' }}</span></td>
+                <td><code class="small">{{ r.target }}</code></td>
                 <td>
-                    {% set s = r.status %}
-                    <span class="badge bg-{{ 'success' if s=='done' else ('danger' if s=='error' else 'secondary') }}">{{ s }}</span>
+                    <span class="d-inline-flex align-items-center gap-2">
+                        <span class="status-dot st-{{ s }}"></span>{{ s }}
+                    </span>
                 </td>
-                <td>{{ r.risk.risk_score if r.risk else '-' }}</td>
-                <td>{{ r.findings_total }}</td>
-                <td class="text-end">
-                    <a href="{{ url_for('view_run', project=project, run_id=r.run_id) }}" class="btn btn-sm btn-outline-primary">Szczegóły</a>
+                <td><span class="fw-bold">{{ r.risk.risk_score if r.risk else '-' }}</span></td>
+                <td>
+                    {% for sev in ['critical','high','medium','low','info'] %}
+                        {% if counts.get(sev) %}
+                        <span class="sev-chip sev-{{ sev }}" title="{{ sev }}">
+                            <span class="dot"></span>{{ counts.get(sev) }}
+                        </span>
+                        {% endif %}
+                    {% else %}<span class="text-muted small">—</span>{% endfor %}
+                </td>
+                <td class="text-end text-nowrap">
+                    <a href="{{ url_for('view_run', project=project, run_id=r.run_id) }}" class="btn btn-sm btn-outline-warning">Szczegóły</a>
                     {% if r.status == 'done' %}
-                    <a href="{{ url_for('run_report', project=project, run_id=r.run_id) }}" class="btn btn-sm btn-success" target="_blank">Raport</a>
+                    <a href="{{ url_for('run_report', project=project, run_id=r.run_id) }}" class="btn btn-sm btn-accent" target="_blank">Raport</a>
                     {% endif %}
                 </td>
             </tr>
         {% else %}
-            <tr><td colspan="7" class="text-muted text-center py-4">Brak uruchomień.</td></tr>
+            <tr><td colspan="8" class="text-muted text-center py-4">Brak uruchomień.</td></tr>
         {% endfor %}
         </tbody>
     </table>

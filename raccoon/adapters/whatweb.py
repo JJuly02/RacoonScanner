@@ -5,6 +5,7 @@ import json
 import os
 
 from ..findings import Confidence, Finding, Severity
+from ..modes import Intensity
 from .base import AdapterResult, RunContext, ToolAdapter
 
 # Pluginy, które oznaczają technologię wartą osobnego findingu (ekspozycja/wersja).
@@ -15,6 +16,7 @@ _NOTABLE = {"apache", "nginx", "php", "wordpress", "joomla", "drupal", "iis",
 class WhatwebAdapter(ToolAdapter):
     name = "whatweb"
     binary = "whatweb"
+    intensity = Intensity.ACTIVE
 
     def run(self, ctx: RunContext) -> AdapterResult:
         urls = ctx.shared.get("web_targets") or [ctx.target]

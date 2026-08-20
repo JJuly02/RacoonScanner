@@ -188,6 +188,8 @@ def test_runner_e2e(tmp_projects: str) -> None:
         check("runner: krok Skip pominięty (brak requires)", stages.get("Skip") == "skipped", str(stages))
         meta = store.load_meta("smoke_proj", run_id)
         check("runner: meta zapisane z findings_total", meta and meta["findings_total"] == 2)
+        check("runner: recon zapisany w meta (web_targets z chainingu)",
+              bool(meta and meta.get("recon", {}).get("web_targets")), str(meta.get("recon") if meta else None))
         rpt = os.path.join(store.run_dir("smoke_proj", run_id), "report.html")
         check("runner: raport wygenerowany na dysku", os.path.exists(rpt))
         raw = os.path.join(store.run_dir("smoke_proj", run_id), "raw", "disc.txt")
@@ -586,6 +588,30 @@ def test_i18n() -> None:
           "\U0001f99d" not in en and "\u2139" not in en and "\u2014" not in en)
 
 
+
+def test_report_recon() -> None:
+    print("[report recon]")
+    from raccoon import report as _report
+    fs = [Finding("Otwarty port 22", "open-port", Severity.INFO, Confidence.HIGH, "1.2.3.4:22", "nmap")]
+    compliance.annotate(fs)
+    recon = {
+        "hosts": ["1.2.3.4"], "subdomains": ["a.example.com", "b.example.com"],
+        "web_tech": ["Apache 2.4", "PHP 7.4"], "nameservers": ["ns1.example.com"],
+        "ssh_targets": ["1.2.3.4"],
+    }
+    html = _report.generate(fs, {"run_id": "r", "target": "example.com",
+                                 "workflow": "Footprinting", "status": "done", "recon": recon})
+    check("recon: sekcja Rozpoznanie obecna", "Rozpoznanie (footprinting)" in html)
+    check("recon: subdomeny widoczne", "a.example.com" in html and "b.example.com" in html)
+    check("recon: technologie web widoczne", "Apache 2.4" in html and "PHP 7.4" in html)
+    check("recon: nameservery widoczne", "ns1.example.com" in html)
+    check("recon: usługi do enumeracji (SSH)", ">SSH<" in html)
+    check("recon: otwarte porty z findings", "1.2.3.4:22" in html)
+    empty = _report.generate(fs, {"run_id": "r", "target": "t", "workflow": "w", "status": "done"})
+    check("recon: bez recon w meta pokazuje info o braku lub porty z findings",
+          ("Brak zebranych danych" in empty) or ("1.2.3.4:22" in empty))
+
+
 def main() -> int:
     import tempfile
     findings = test_adapters()
@@ -597,6 +623,7 @@ def main() -> int:
     test_footprint()
     test_whatweb_full()
     test_report_explain()
+    test_report_recon()
     test_i18n()
     test_modes()
     test_scope()

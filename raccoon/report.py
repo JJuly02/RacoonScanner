@@ -53,6 +53,7 @@ def generate(findings: list[Finding], meta: dict, lang: str = "pl") -> str:
     )
     donut = _severity_donut(risk["counts"], risk["total"], L)
     cat_bars = _category_bars(findings)
+    recon_html = _recon_section(meta.get("recon") or {}, findings, L)
 
     fw_chips = "".join(
         f'<span class="chip">{html.escape(k)}: <b>{v}</b> {L("report.controls_of")}</span>'
@@ -79,6 +80,7 @@ def generate(findings: list[Finding], meta: dict, lang: str = "pl") -> str:
         tiles=tiles,
         donut=donut,
         cat_bars=cat_bars,
+        recon=recon_html,
         fw_chips=fw_chips,
         matrix_rows=matrix_rows,
         assets=assets,
@@ -94,6 +96,7 @@ def generate(findings: list[Finding], meta: dict, lang: str = "pl") -> str:
         L_overview=L("report.overview"),
         L_sev_distribution=L("report.sev_distribution"),
         L_by_category=L("report.by_category"),
+        L_recon=L("report.recon"),
         L_fw_coverage=L("report.fw_coverage"),
         L_matrix=L("report.matrix"),
         L_matrix_note=L("report.matrix_note"),
@@ -114,6 +117,65 @@ def _color_for_rank(rank: int) -> str:
 
 def _name_for_rank(rank: int) -> str:
     return {4: "critical", 3: "high", 2: "medium", 1: "low", 0: "info"}[rank]
+
+
+_RECON_LABELS = [
+    ("hosts", "recon.hosts"), ("subdomains", "recon.subdomains"),
+    ("web_targets", "recon.web_targets"), ("web_tech", "recon.web_tech"),
+    ("nameservers", "recon.nameservers"),
+]
+_SERVICE_LABELS = {
+    "smb_targets": "SMB", "ftp_targets": "FTP", "snmp_targets": "SNMP",
+    "db_targets": "DB", "mail_targets": "Mail", "rdp_targets": "RDP", "ssh_targets": "SSH",
+}
+
+
+def _rchips(items) -> str:
+    return "".join(f'<span class="rchip">{html.escape(str(x))}</span>' for x in items)
+
+
+def _recon_card(title: str, count: int, body: str) -> str:
+    return (f'<div class="recon-card"><div class="rc-h"><span>{html.escape(title)}</span>'
+            f'<span class="rc-count">{count}</span></div><div class="rc-items">{body}</div></div>')
+
+
+def _collect_open_ports(recon: dict, findings: list[Finding]) -> list[str]:
+    seen: dict[str, str] = {}
+    for op in recon.get("open_ports") or []:
+        if isinstance(op, dict):
+            hp = f'{op.get("host", "")}:{op.get("port", "")}'
+            svc = op.get("service", "")
+            seen[hp] = hp + (f" ({svc})" if svc else "")
+    for f in findings:
+        if f.category == "open-port":
+            hp = f.asset.split(" ")[0]
+            seen.setdefault(hp, hp)
+    return list(seen.values())
+
+
+def _recon_section(recon: dict, findings: list[Finding], L) -> str:
+    """Inwentarz footprintingu - wszystko, co recon zebral, nawet bez konkretnego znaleziska."""
+    cards: list[str] = []
+    for key, lkey in _RECON_LABELS:
+        vals = recon.get(key) or []
+        if vals:
+            cards.append(_recon_card(L(lkey), len(vals), _rchips(vals)))
+    ports = _collect_open_ports(recon, findings)
+    if ports:
+        cards.append(_recon_card(L("recon.open_ports"), len(ports), _rchips(ports)))
+    svc_rows = ""
+    svc_total = 0
+    for key, label in _SERVICE_LABELS.items():
+        hosts = recon.get(key) or []
+        if hosts:
+            svc_total += len(hosts)
+            svc_rows += f'<div class="rsvc"><span class="rsvc-l">{label}</span> {_rchips(hosts)}</div>'
+    if svc_rows:
+        cards.append(_recon_card(L("recon.services"), svc_total, svc_rows))
+    if not cards:
+        return f'<p class="muted">{L("report.recon_empty")}</p>'
+    return (f'<p class="section-note">{L("report.recon_note")}</p>'
+            f'<div class="recon-grid">{"".join(cards)}</div>')
 
 
 # --- wykresy (inline SVG / CSS) --------------------------------------------
@@ -308,6 +370,14 @@ pre{{background:#0009;padding:10px;border-radius:6px;overflow:auto;white-space:p
 details.ex{{margin:4px 0}}
 details.ex summary{{cursor:pointer;color:var(--accent);font-size:12px;user-select:none}}
 .ex-body{{white-space:pre-line;color:var(--muted);font-size:12.5px;margin:6px 0 2px;padding:8px 10px;background:#0006;border-radius:6px;border:1px solid var(--line)}}
+.recon-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:12px}}
+.recon-card{{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}}
+.rc-h{{display:flex;justify-content:space-between;align-items:center;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:8px}}
+.rc-count{{background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:0 9px;font-weight:700;color:var(--fg)}}
+.rc-items{{display:flex;flex-wrap:wrap;gap:5px;max-height:168px;overflow:auto}}
+.rchip{{background:#0006;border:1px solid var(--line);border-radius:5px;padding:2px 7px;font-size:11.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}}
+.rsvc{{width:100%;margin:2px 0;display:flex;flex-wrap:wrap;gap:5px;align-items:center}}
+.rsvc-l{{min-width:42px;color:var(--accent);font-weight:700;font-size:11px}}
 footer{{margin-top:32px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-top:12px}}
 </style></head>
 <body><div class="wrap">
@@ -331,6 +401,9 @@ footer{{margin-top:32px;color:var(--muted);font-size:12px;border-top:1px solid v
   <div class="ov-card"><div class="ov-title">{L_sev_distribution}</div>{donut}</div>
   <div class="ov-card"><div class="ov-title">{L_by_category}</div>{cat_bars}</div>
 </div>
+
+<h2>{L_recon}</h2>
+{recon}
 
 <h2>{L_assets}</h2>
 {assets}

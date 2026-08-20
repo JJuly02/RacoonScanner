@@ -147,6 +147,19 @@ _CAT: dict[str, dict[str, str]] = {
     "report.matrix_note": {"pl": "Które wymogi regulacyjne dotykają znaleziska (mapowanie poglądowe).",
                            "en": "Which regulatory requirements the findings touch (advisory mapping)."},
     "report.no_assets": {"pl": "Brak zasobów.", "en": "No assets."},
+    "report.recon": {"pl": "Rozpoznanie (footprinting)", "en": "Reconnaissance (footprinting)"},
+    "report.recon_note": {"pl": "Pelny zbior danych zebranych w fazie rozpoznania - takze wtedy, "
+                                "gdy nie dalo to konkretnego znaleziska.",
+                          "en": "Full set of data gathered during reconnaissance - even when it did "
+                                "not yield a concrete finding."},
+    "report.recon_empty": {"pl": "Brak zebranych danych rozpoznania.", "en": "No reconnaissance data collected."},
+    "recon.hosts": {"pl": "Hosty / IP", "en": "Hosts / IPs"},
+    "recon.subdomains": {"pl": "Subdomeny", "en": "Subdomains"},
+    "recon.web_targets": {"pl": "Cele web", "en": "Web targets"},
+    "recon.web_tech": {"pl": "Technologie web", "en": "Web technologies"},
+    "recon.nameservers": {"pl": "Nameservery", "en": "Nameservers"},
+    "recon.open_ports": {"pl": "Otwarte porty", "en": "Open ports"},
+    "recon.services": {"pl": "Wykryte uslugi do enumeracji", "en": "Services detected for enumeration"},
     "report.of_total": {"pl": "z", "en": "of"},
 }
 

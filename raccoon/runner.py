@@ -27,6 +27,22 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+# Klucze artefaktow rozpoznania, ktore pokazujemy w raporcie (inwentarz footprintingu).
+_RECON_KEYS = ("hosts", "subdomains", "web_targets", "web_tech", "nameservers",
+               "open_ports", "smb_targets", "ftp_targets", "snmp_targets",
+               "db_targets", "mail_targets", "rdp_targets", "ssh_targets")
+
+
+def _recon_snapshot(recon: dict) -> dict:
+    """Serializowalny wycinek zebranych artefaktow (tylko istotne, niepuste klucze)."""
+    out: dict = {}
+    for k in _RECON_KEYS:
+        v = recon.get(k)
+        if v:
+            out[k] = v
+    return out
+
+
 def _risk_lite(findings) -> dict:
     """Lekkie podsumowanie ryzyka (liczniki severity + score) do pollingu."""
     r = compliance.risk_summary(findings)
@@ -71,6 +87,7 @@ class RunState:
     error: str = ""
     stages: list[StageState] = field(default_factory=list)
     findings: list[Finding] = field(default_factory=list)
+    recon: dict = field(default_factory=dict)   # zebrane artefakty rozpoznania (shared context)
     log: list[str] = field(default_factory=list)
 
     def status_dict(self) -> dict:
@@ -110,6 +127,7 @@ class RunState:
             "findings_total": len(self.findings),
             "risk": {"counts": risk["counts"], "risk_score": risk["risk_score"]},
             "frameworks": compliance.frameworks_summary(self.findings),
+            "recon": _recon_snapshot(self.recon),
         }
 
 
@@ -187,6 +205,7 @@ class Runner:
         state.started = _now()
         self._persist(state)
         shared: dict = {}
+        state.recon = shared      # inwentarz footprintingu (aktualizowany przez _merge)
         workdir = self.store.run_dir(state.project, state.run_id) + "/raw"
         mode = modes.parse_mode(state.mode)
         key = self._key(state.project, state.run_id)

@@ -1,4 +1,4 @@
-"""Adapter: nmap — skan portów i wersji usług (parsuje wyjście XML `-oX`)."""
+"""Adapter: nmap - skan portów i wersji usług (parsuje wyjście XML `-oX`)."""
 from __future__ import annotations
 
 import os
@@ -11,17 +11,17 @@ from .base import AdapterResult, RunContext, ToolAdapter
 
 # Usługi, których gołe wystawienie na świat traktujemy jako podwyższone ryzyko.
 _RISKY = {
-    "telnet": (Severity.HIGH, "Telnet przesyła dane (w tym hasła) otwartym tekstem — wyłącz na rzecz SSH."),
-    "ftp": (Severity.MEDIUM, "FTP bez TLS przesyła poświadczenia otwartym tekstem — rozważ SFTP/FTPS."),
-    "microsoft-ds": (Severity.MEDIUM, "SMB wystawiony na zewnątrz — ogranicz dostęp firewallem."),
-    "netbios-ssn": (Severity.MEDIUM, "NetBIOS/SMB wystawiony na zewnątrz — ogranicz dostęp."),
-    "rdp": (Severity.MEDIUM, "RDP wystawiony publicznie — użyj VPN/bastion i MFA."),
-    "ms-wbt-server": (Severity.MEDIUM, "RDP wystawiony publicznie — użyj VPN/bastion i MFA."),
-    "vnc": (Severity.HIGH, "VNC często bez silnej autentykacji — ogranicz dostęp."),
-    "mysql": (Severity.MEDIUM, "Baza danych dostępna z zewnątrz — ogranicz do zaufanych sieci."),
-    "postgresql": (Severity.MEDIUM, "Baza danych dostępna z zewnątrz — ogranicz do zaufanych sieci."),
-    "mongodb": (Severity.HIGH, "MongoDB wystawiony publicznie bywa nieuwierzytelniony — ogranicz dostęp."),
-    "redis": (Severity.HIGH, "Redis domyślnie bez auth — nie wystawiaj publicznie."),
+    "telnet": (Severity.HIGH, "Telnet przesyła dane (w tym hasła) otwartym tekstem - wyłącz na rzecz SSH."),
+    "ftp": (Severity.MEDIUM, "FTP bez TLS przesyła poświadczenia otwartym tekstem - rozważ SFTP/FTPS."),
+    "microsoft-ds": (Severity.MEDIUM, "SMB wystawiony na zewnątrz - ogranicz dostęp firewallem."),
+    "netbios-ssn": (Severity.MEDIUM, "NetBIOS/SMB wystawiony na zewnątrz - ogranicz dostęp."),
+    "rdp": (Severity.MEDIUM, "RDP wystawiony publicznie - użyj VPN/bastion i MFA."),
+    "ms-wbt-server": (Severity.MEDIUM, "RDP wystawiony publicznie - użyj VPN/bastion i MFA."),
+    "vnc": (Severity.HIGH, "VNC często bez silnej autentykacji - ogranicz dostęp."),
+    "mysql": (Severity.MEDIUM, "Baza danych dostępna z zewnątrz - ogranicz do zaufanych sieci."),
+    "postgresql": (Severity.MEDIUM, "Baza danych dostępna z zewnątrz - ogranicz do zaufanych sieci."),
+    "mongodb": (Severity.HIGH, "MongoDB wystawiony publicznie bywa nieuwierzytelniony - ogranicz dostęp."),
+    "redis": (Severity.HIGH, "Redis domyślnie bez auth - nie wystawiaj publicznie."),
 }
 
 
@@ -89,7 +89,7 @@ class NmapAdapter(ToolAdapter):
         except ET.ParseError:
             return AdapterResult()
         for host_el in root.findall("host"):
-            # Preferuj adres IP (ipv4/ipv6) — nmap potrafi podać też <address addrtype="mac">.
+            # Preferuj adres IP (ipv4/ipv6) - nmap potrafi podać też <address addrtype="mac">.
             addr = host
             ip_addrs = [a for a in host_el.findall("address")
                         if a.get("addrtype") in ("ipv4", "ipv6")]
@@ -132,7 +132,7 @@ class NmapAdapter(ToolAdapter):
                         asset=f"{addr}:{portid}",
                         tool="nmap",
                         evidence=banner,
-                        recommendation="Ujawniona wersja ułatwia dobranie exploita — rozważ ukrycie bannera i aktualizację.",
+                        recommendation="Ujawniona wersja ułatwia dobranie exploita - rozważ ukrycie bannera i aktualizację.",
                         references=["CWE-200"],
                     ))
                 if is_web_port(portid, svc):

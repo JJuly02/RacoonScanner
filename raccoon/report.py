@@ -1,9 +1,10 @@
 """Generator samodzielnego, interaktywnego raportu HTML.
 
-Raport jest w pełni offline (bez CDN): CSS i JS są wstawione inline, więc plik
-otwiera się w przeglądarce także bez sieci. Zawiera podsumowanie ryzyka,
-macierz zgodności (NIS2/UKSC/ISO/DORA), filtr severity, triage (localStorage)
-oraz grupowanie znalezisk per zasób.
+Raport jest w pelni offline (bez CDN): CSS i JS sa wstawione inline, wiec plik
+otwiera sie w przegladarce takze bez sieci. Zawiera podsumowanie ryzyka,
+macierz zgodnosci (NIS2/UKSC/ISO/DORA), filtr severity, triage (localStorage)
+oraz grupowanie znalezisk per zasob. Chrome (naglowki/etykiety) tlumaczony jest
+przez warstwe i18n; tresc znalezisk pozostaje w jezyku zrodlowym adapterow.
 """
 from __future__ import annotations
 
@@ -11,7 +12,7 @@ import html
 import json
 from datetime import datetime, timezone
 
-from . import compliance
+from . import compliance, explain, i18n
 from .findings import Finding, sort_by_risk
 
 _SEV_ORDER = ["critical", "high", "medium", "low", "info"]
@@ -28,7 +29,12 @@ def export_json(findings: list[Finding], meta: dict) -> str:
     )
 
 
-def generate(findings: list[Finding], meta: dict) -> str:
+def generate(findings: list[Finding], meta: dict, lang: str = "pl") -> str:
+    lang = i18n.normalize(lang)
+
+    def L(key: str) -> str:
+        return i18n.t(key, lang)
+
     findings = sort_by_risk(findings)
     risk = compliance.risk_summary(findings)
     matrix = compliance.matrix(findings)
@@ -42,25 +48,20 @@ def generate(findings: list[Finding], meta: dict) -> str:
         for s in _SEV_ORDER
     )
     fw_chips = "".join(
-        f'<span class="chip">{html.escape(k)}: <b>{v}</b> kontroli</span>'
+        f'<span class="chip">{html.escape(k)}: <b>{v}</b> {L("report.controls_of")}</span>'
         for k, v in sorted(frameworks.items())
-    ) or '<span class="muted">brak trafień</span>'
+    ) or f'<span class="muted">{L("report.no_fw")}</span>'
 
-    matrix_rows = "".join(
-        f'<tr><td><code>{html.escape(c.control)}</code></td>'
-        f'<td>{html.escape(c.label)}</td>'
-        f'<td class="center">{c.hits}</td>'
-        f'<td class="center"><span class="badge" style="background:{_color_for_rank(c.max_severity_rank)}">'
-        f'{_name_for_rank(c.max_severity_rank)}</span></td></tr>'
-        for c in matrix
-    ) or '<tr><td colspan="4" class="muted center">brak zmapowanych kontroli</td></tr>'
+    matrix_rows = "".join(_matrix_row(c) for c in matrix) or \
+        f'<tr><td colspan="4" class="muted center">{L("report.no_controls")}</td></tr>'
 
-    cards = "".join(_finding_card(f) for f in findings) or \
-        '<p class="muted">Brak znalezisk.</p>'
+    cards = "".join(_finding_card(f, L) for f in findings) or \
+        f'<p class="muted">{L("report.no_findings")}</p>'
 
-    assets = _assets_summary(findings)
+    assets = _assets_summary(findings, L)
 
     return _TEMPLATE.format(
+        lang=lang,
         run_id=run_id,
         target=html.escape(str(meta.get("target", ""))),
         workflow=html.escape(str(meta.get("workflow", ""))),
@@ -73,6 +74,24 @@ def generate(findings: list[Finding], meta: dict) -> str:
         matrix_rows=matrix_rows,
         assets=assets,
         cards=cards,
+        # etykiety chrome
+        L_title=L("report.title"),
+        L_target=L("common.target"),
+        L_workflow=L("common.workflow"),
+        L_run="Run",
+        L_status=L("common.status"),
+        L_generated=L("report.generated"),
+        L_risk_score=L("common.risk_score"),
+        L_findings=L("common.findings"),
+        L_fw_coverage=L("report.fw_coverage"),
+        L_matrix=L("report.matrix"),
+        L_col_control=L("report.col_control"),
+        L_col_req=L("report.col_req"),
+        L_col_hits=L("report.col_hits"),
+        L_col_maxsev=L("report.col_maxsev"),
+        L_assets=L("report.assets"),
+        L_findings_h=L("report.findings"),
+        L_footer=L("report.footer"),
     )
 
 
@@ -84,22 +103,38 @@ def _name_for_rank(rank: int) -> str:
     return {4: "critical", 3: "high", 2: "medium", 1: "low", 0: "info"}[rank]
 
 
-def _assets_summary(findings: list[Finding]) -> str:
+def _assets_summary(findings: list[Finding], L) -> str:
     by_asset: dict[str, int] = {}
     for f in findings:
         by_asset[f.asset] = by_asset.get(f.asset, 0) + 1
     if not by_asset:
-        return '<p class="muted">—</p>'
+        return '<p class="muted">-</p>'
     rows = "".join(
         f'<tr><td><code>{html.escape(a)}</code></td><td class="center">{n}</td></tr>'
         for a, n in sorted(by_asset.items(), key=lambda x: x[1], reverse=True)
     )
-    return f'<table class="grid"><thead><tr><th>Zasób</th><th>Znalezisk</th></tr></thead><tbody>{rows}</tbody></table>'
+    return (f'<table class="grid"><thead><tr><th>{L("report.col_asset")}</th>'
+            f'<th>{L("common.findings")}</th></tr></thead><tbody>{rows}</tbody></table>')
 
 
-def _finding_card(f: Finding) -> str:
+def _matrix_row(c) -> str:
+    ex = explain.explain_control(c.control)
+    label = html.escape(c.label)
+    req = (f'<details class="exm"><summary>{label}</summary>'
+           f'<div class="ex-body">{html.escape(ex)}</div></details>') if ex else label
+    return (f'<tr><td><code>{html.escape(c.control)}</code></td>'
+            f'<td>{req}</td>'
+            f'<td class="center">{c.hits}</td>'
+            f'<td class="center"><span class="badge" style="background:{_color_for_rank(c.max_severity_rank)}">'
+            f'{_name_for_rank(c.max_severity_rank)}</span></td></tr>')
+
+
+def _finding_card(f: Finding, L) -> str:
     refs = " ".join(f'<span class="ref">{html.escape(r)}</span>' for r in f.references)
     ctrls = " ".join(f'<span class="ctrl">{html.escape(c)}</span>' for c in f.compliance)
+    _ex = explain.explain_finding(f.category, f.asset)
+    expl = (f'<div class="kv"><details class="ex"><summary>{L("report.whatmeans")}</summary>'
+            f'<div class="ex-body">{html.escape(_ex)}</div></details></div>') if _ex else ''
     return f'''
 <div class="card sev-{f.severity.value}" data-sev="{f.severity.value}" data-id="{f.id}">
   <div class="card-head" onclick="toggle('{f.id}')">
@@ -111,19 +146,20 @@ def _finding_card(f: Finding) -> str:
     <span class="risk">risk {f.risk}</span>
   </div>
   <div class="card-body" id="body-{f.id}">
-    <div class="kv"><b>Zasób:</b> <code>{html.escape(f.asset)}</code></div>
-    <div class="kv"><b>Dowód:</b><pre>{html.escape(f.evidence)}</pre></div>
-    <div class="kv"><b>Rekomendacja:</b> {html.escape(f.recommendation)}</div>
-    {f'<div class="kv"><b>Referencje:</b> {refs}</div>' if refs else ''}
-    {f'<div class="kv"><b>Zgodność:</b> {ctrls}</div>' if ctrls else ''}
+    <div class="kv"><b>{L("report.f_asset")}</b> <code>{html.escape(f.asset)}</code></div>
+    <div class="kv"><b>{L("report.f_evidence")}</b><pre>{html.escape(f.evidence)}</pre></div>
+    <div class="kv"><b>{L("report.f_reco")}</b> {html.escape(f.recommendation)}</div>
+    {expl}
+    {f'<div class="kv"><b>{L("report.f_refs")}</b> {refs}</div>' if refs else ''}
+    {f'<div class="kv"><b>{L("report.f_compliance")}</b> {ctrls}</div>' if ctrls else ''}
   </div>
 </div>'''
 
 
 _TEMPLATE = """<!DOCTYPE html>
-<html lang="pl"><head><meta charset="utf-8">
+<html lang="{lang}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RacoonScanner — raport {run_id}</title>
+<title>RacoonScanner - {L_title} {run_id}</title>
 <style>
 :root{{--bg:#0f1419;--panel:#1a2029;--line:#2a323d;--fg:#e6edf3;--muted:#8b98a5;--accent:#2dd4bf;}}
 *{{box-sizing:border-box}}
@@ -167,35 +203,39 @@ pre{{background:#0009;padding:10px;border-radius:6px;overflow:auto;white-space:p
 .ref,.ctrl{{display:inline-block;background:#0006;border:1px solid var(--line);border-radius:4px;padding:1px 7px;margin:2px;font-size:11px}}
 .ctrl{{color:var(--accent)}}
 .card.done .title{{text-decoration:line-through;opacity:.5}}
+details.ex,details.exm{{margin:4px 0}}
+details.ex summary{{cursor:pointer;color:var(--accent);font-size:12px;user-select:none}}
+details.exm summary{{cursor:pointer;color:var(--fg);user-select:none}}
+.ex-body{{white-space:pre-line;color:var(--muted);font-size:12.5px;margin:6px 0 2px;padding:8px 10px;background:#0006;border-radius:6px;border:1px solid var(--line)}}
 footer{{margin-top:32px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-top:12px}}
 </style></head>
 <body><div class="wrap">
 <header>
-  <h1>🦝 <span class="rc">Racoon</span>Scanner — raport skanowania</h1>
+  <h1><span class="rc">Racoon</span>Scanner - {L_title}</h1>
   <div class="meta">
-    Cel: <code>{target}</code> &nbsp;·&nbsp; Workflow: <code>{workflow}</code>
-    &nbsp;·&nbsp; Run: <code>{run_id}</code> &nbsp;·&nbsp; Status: <code>{status}</code>
-    &nbsp;·&nbsp; Wygenerowano: {generated}
+    {L_target}: <code>{target}</code> &nbsp;&middot;&nbsp; {L_workflow}: <code>{workflow}</code>
+    &nbsp;&middot;&nbsp; {L_run}: <code>{run_id}</code> &nbsp;&middot;&nbsp; {L_status}: <code>{status}</code>
+    &nbsp;&middot;&nbsp; {L_generated}: {generated}
   </div>
 </header>
 
 <div class="tiles">
-  <div class="scorebox"><span class="tile-num">{risk_score}</span><span class="tile-label">Risk score</span></div>
-  <div class="tile"><span class="tile-num">{total}</span><span class="tile-label">Znalezisk</span></div>
+  <div class="scorebox"><span class="tile-num">{risk_score}</span><span class="tile-label">{L_risk_score}</span></div>
+  <div class="tile"><span class="tile-num">{total}</span><span class="tile-label">{L_findings}</span></div>
   {tiles}
 </div>
 
-<h2>Zgodność — pokrycie frameworków</h2>
+<h2>{L_fw_coverage}</h2>
 <div>{fw_chips}</div>
 
-<h2>Macierz zgodności</h2>
-<table class="grid"><thead><tr><th>Kontrola</th><th>Wymóg</th><th>Trafień</th><th>Max severity</th></tr></thead>
+<h2>{L_matrix}</h2>
+<table class="grid"><thead><tr><th>{L_col_control}</th><th>{L_col_req}</th><th>{L_col_hits}</th><th>{L_col_maxsev}</th></tr></thead>
 <tbody>{matrix_rows}</tbody></table>
 
-<h2>Zasoby</h2>
+<h2>{L_assets}</h2>
 {assets}
 
-<h2>Znaleziska</h2>
+<h2>{L_findings_h}</h2>
 <div class="filters" id="filters">
   <button data-sev="critical">critical</button>
   <button data-sev="high">high</button>
@@ -205,8 +245,7 @@ footer{{margin-top:32px;color:var(--muted);font-size:12px;border-top:1px solid v
 </div>
 {cards}
 
-<footer>Wygenerowano przez RacoonScanner. Raport poglądowy — mapowanie na wymogi
-regulacyjne nie stanowi formalnej interpretacji prawnej.</footer>
+<footer>{L_footer}</footer>
 </div>
 <script>
 var RUN = "{run_id}";

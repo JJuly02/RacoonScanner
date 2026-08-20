@@ -2,7 +2,7 @@
 
 Dwie warstwy ochrony przed skanowaniem czegoś, czego nie wolno:
   1. walidacja formatu celu (host / IP / URL, bez metaznaków powłoki),
-  2. opcjonalna biała lista zakresu (`private/scope_allowlist.txt`) — jeśli
+  2. opcjonalna biała lista zakresu (`private/scope_allowlist.txt`) - jeśli
      istnieje i jest niepusta, cel musi do niej pasować.
 """
 from __future__ import annotations
@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 
 from .netutil import host_of
 
-# Dozwolone znaki w hoście/URL — świadomie wykluczamy metaznaki powłoki i spacje.
+# Dozwolone znaki w hoście/URL - świadomie wykluczamy metaznaki powłoki i spacje.
 _HOST_RE = re.compile(r"^[A-Za-z0-9._\-]+$")
 _URL_RE = re.compile(r"^https?://[A-Za-z0-9._\-]+(:\d+)?(/[^\s]*)?$")
 
@@ -37,7 +37,7 @@ def validate_target(raw: str) -> tuple[bool, str, str]:
     except ValueError:
         pass
     # Dopuszczamy zarówno FQDN (z kropką), jak i pojedyncze etykiety (localhost,
-    # host wewnętrzny) — _HOST_RE i tak wyklucza metaznaki i znaki spoza ASCII.
+    # host wewnętrzny) - _HOST_RE i tak wyklucza metaznaki i znaki spoza ASCII.
     if _HOST_RE.match(host):
         return True, t, ""
     return False, "", "Niepoprawny host/IP/URL."
@@ -56,7 +56,7 @@ def load_allowlist(private_dir: str) -> list[str]:
 
 
 def allowlist_text(private_dir: str) -> str:
-    """Surowa treść pliku zakresu (z komentarzami) — do edytora reguł."""
+    """Surowa treść pliku zakresu (z komentarzami) - do edytora reguł."""
     path = _allowlist_path(private_dir)
     if not os.path.exists(path):
         return ""

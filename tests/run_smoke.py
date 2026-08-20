@@ -262,6 +262,14 @@ def test_flask(tmp_cwd: str) -> None:
     # posprzątaj regułę, by nie wpływała na inne testy
     client.post("/rules", data={"allowlist": ""}, follow_redirects=True)
 
+    # przełączenie języka na EN i sprawdzenie dashboardu
+    client.get("/lang/en")
+    r = client.get("/")
+    body = r.get_data(as_text=True)
+    check("flask: przełączenie na EN działa (Dashboard/New scan)",
+          "New scan" in body and "Dashboard" in body, "brak angielskich napisów")
+    client.get("/lang/pl")  # powrót do PL, by nie wpływać na inne testy
+
     # path traversal na download_raw
     r = client.get("/run/p1/run_x/raw/..%2f..%2fmeta.json")
     check("flask: download_raw blokuje traversal", r.status_code in (400, 404))
@@ -462,6 +470,113 @@ def test_footprint() -> None:
           "db_targets" not in nm.artifacts, str(list(nm.artifacts)))
 
 
+
+def test_whatweb_full() -> None:
+    print("[whatweb full fingerprint]")
+    res = WhatwebAdapter()._parse(read("whatweb.json"), "http://45.33.32.156")
+    fp = [f for f in res.findings if f.category == "web-fingerprint"]
+    check("whatweb: emituje pełny fingerprint (web-fingerprint)", len(fp) == 1, str(len(fp)))
+    check("whatweb: fingerprint listuje wszystkie technologie",
+          "Apache" in fp[0].evidence and "PHP" in fp[0].evidence and "WordPress" in fp[0].evidence)
+    empty = WhatwebAdapter()._parse("[]", "http://x")
+    ef = [f for f in empty.findings if f.category == "web-fingerprint"]
+    check("whatweb: pusty wynik też daje info-finding",
+          len(ef) == 1 and ef[0].severity == Severity.INFO and "nie rozpoznało" in ef[0].evidence)
+
+
+def test_report_explain() -> None:
+    print("[report explanations]")
+    from raccoon import report as _report
+    fs = [
+        Finding("Otwarty port 22/tcp (ssh) na 1.2.3.4", "open-port",
+                Severity.INFO, Confidence.HIGH, "1.2.3.4:22", "nmap"),
+        Finding("SQLi", "injection-sqli", Severity.CRITICAL, Confidence.HIGH, "http://x/?id=1", "sqlmap"),
+    ]
+    compliance.annotate(fs)
+    html = _report.generate(fs, {"run_id": "r1", "target": "1.2.3.4", "workflow": "WF", "status": "done"})
+    check("report: znaleziska mają rozwijane wyjaśnienie", "Co to znaczy?" in html)
+    check("report: wyjaśnienie portu 22 (SSH)", "Port 22 - SSH" in html)
+    check("report: macierz zgodności ma rozwijane wyjaśnienia kontroli", 'class="exm"' in html)
+    check("report: nadal poprawny offline HTML",
+          html.startswith("<!DOCTYPE html>") and "</html>" in html)
+
+
+class _SlowAdapter(ToolAdapter):
+    name = "fake_slow"
+    binary = "python3"
+    intensity = modes.Intensity.PASSIVE
+
+    def __init__(self):
+        import threading as _t
+        self.gate = _t.Event()
+
+    def run(self, ctx: RunContext) -> AdapterResult:
+        self.gate.wait(timeout=5)
+        f = Finding("slow", "open-port", Severity.INFO, Confidence.HIGH, ctx.target, "fake_slow")
+        return AdapterResult(findings=[f])
+
+
+def test_runner_stop_dedup(tmp_projects: str) -> None:
+    print("[runner stop + dedup]")
+    slow = _SlowAdapter()
+    REGISTRY["fake_slow"] = slow
+    REGISTRY["fake_disc"] = _FakeDisc()
+    wf_path = os.path.join(WORKFLOWS_DIR, "_smoke_slow.yaml")
+    with open(wf_path, "w", encoding="utf-8") as fh:
+        fh.write("name: Slow\ndescription: t\nstages:\n"
+                 "  - name: S1\n    adapter: fake_slow\n"
+                 "  - name: S2\n    adapter: fake_disc\n")
+    try:
+        store = Store(tmp_projects)
+        runner = Runner(store)
+        r1 = runner.submit("p", "_smoke_slow", "http://t/", mode="all")
+        r2 = runner.submit("p", "_smoke_slow", "http://t/", mode="all")  # duplikat
+        check("dedup: podwójne submit zwraca ten sam run_id", r1 == r2, f"{r1} vs {r2}")
+        check("dedup: powstał tylko jeden run", len(store.list_runs("p")) == 1,
+              str(len(store.list_runs("p"))))
+        check("has_active: wykrywa trwający identyczny skan",
+              runner.has_active("p", "_smoke_slow", "http://t/", "all"))
+
+        accepted = runner.cancel("p", r1)
+        check("stop: cancel zaakceptowany dla aktywnego runu", accepted)
+        slow.gate.set()  # odblokuj krok 1, żeby pętla doszła do sprawdzenia cancel
+        deadline = time.time() + 8
+        meta = None
+        while time.time() < deadline:
+            meta = store.load_meta("p", r1)
+            if meta and meta.get("status") in ("done", "error", "cancelled"):
+                break
+            time.sleep(0.1)
+        check("stop: status runu = cancelled", meta and meta["status"] == "cancelled",
+              str(meta.get("status") if meta else None))
+        stages = {s["name"]: (s["status"], s.get("note", "")) for s in (meta or {}).get("stages", [])}
+        check("stop: kolejny krok pominięty z notatką 'przerwano skan'",
+              stages.get("S2", ("", ""))[0] == "skipped" and "przerwano" in stages.get("S2", ("", ""))[1],
+              str(stages))
+    finally:
+        os.remove(wf_path)
+        for k in ("fake_slow", "fake_disc"):
+            REGISTRY.pop(k, None)
+
+
+
+def test_i18n() -> None:
+    print("[i18n]")
+    from raccoon import i18n
+    check("i18n: EN tłumaczenie klucza", i18n.t("nav.panel", "en") == "Dashboard")
+    check("i18n: PL tłumaczenie klucza", i18n.t("nav.panel", "pl") == "Panel")
+    check("i18n: fallback nieznanego języka -> PL", i18n.t("nav.panel", "de") == "Panel")
+    check("i18n: nieznany klucz zwraca klucz", i18n.t("no.such.key", "en") == "no.such.key")
+    from raccoon import report as _report
+    fs = [Finding("Otwarty port 22", "open-port", Severity.INFO, Confidence.HIGH, "1.2.3.4:22", "nmap")]
+    compliance.annotate(fs)
+    en = _report.generate(fs, {"run_id": "r", "target": "t", "workflow": "w", "status": "done"}, lang="en")
+    check("i18n: raport EN ma angielskie nagłówki",
+          "scan report" in en and "Compliance matrix" in en and "What does this mean" in en)
+    check("i18n: raport EN bez emotek i bez em-dash",
+          "\U0001f99d" not in en and "\u2139" not in en and "\u2014" not in en)
+
+
 def main() -> int:
     import tempfile
     findings = test_adapters()
@@ -471,17 +586,22 @@ def main() -> int:
     test_workflows()
     test_shodan()
     test_footprint()
+    test_whatweb_full()
+    test_report_explain()
+    test_i18n()
     test_modes()
     test_scope()
-    with tempfile.TemporaryDirectory() as d1:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d1:
         test_runner_e2e(os.path.join(d1, "projects"))
-    with tempfile.TemporaryDirectory() as dm:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as dm:
         test_runner_modes(os.path.join(dm, "projects"))
-    with tempfile.TemporaryDirectory() as dg:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as dsd:
+        test_runner_stop_dedup(os.path.join(dsd, "projects"))
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as dg:
         test_store_guard(os.path.join(dg, "projects"))
-    with tempfile.TemporaryDirectory() as dr:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as dr:
         test_rules(os.path.join(dr, "private"))
-    with tempfile.TemporaryDirectory() as d2:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d2:
         test_flask(d2)
     print(f"\n{_PASS} passed, {_FAIL} failed")
     return 1 if _FAIL else 0

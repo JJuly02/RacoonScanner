@@ -1,4 +1,4 @@
-"""Adapter: SMB — enumeracja udziałów przez sesję null (smbclient -N -L).
+"""Adapter: SMB - enumeracja udziałów przez sesję null (smbclient -N -L).
 
 Wyzwalany, gdy nmap wykryje SMB (`smb_targets`). Próbuje anonimowo (null session)
 wylistować udziały. Dostępny listing bez uwierzytelnienia to typowy błąd
@@ -13,8 +13,8 @@ from ..modes import Intensity
 from ..netutil import host_of
 from .base import AdapterResult, RunContext, ToolAdapter
 
-# Udziały domyślne/administracyjne — mniej ciekawe niż własne share'y firmy.
-# (porównywane wielkimi literami — patrz s[0].upper() niżej)
+# Udziały domyślne/administracyjne - mniej ciekawe niż własne share'y firmy.
+# (porównywane wielkimi literami - patrz s[0].upper() niżej)
 _DEFAULT_SHARES = {"IPC$", "PRINT$", "ADMIN$", "C$"}
 
 
@@ -42,7 +42,7 @@ class SmbAdapter(ToolAdapter):
         findings: list[Finding] = []
         custom = [s for s in shares if s[0].upper() not in _DEFAULT_SHARES]
         findings.append(Finding(
-            title=f"SMB null session dozwolona na {host} — {len(shares)} udziałów",
+            title=f"SMB null session dozwolona na {host} - {len(shares)} udziałów",
             category="service-exposure",
             severity=Severity.HIGH if custom else Severity.MEDIUM,
             confidence=Confidence.HIGH,
@@ -62,7 +62,7 @@ class SmbAdapter(ToolAdapter):
                 confidence=Confidence.HIGH,
                 asset=f"//{host}/{name}",
                 tool="smb",
-                evidence=f"{name} ({stype}) — {comment}".strip(" —"),
+                evidence=f"{name} ({stype}) - {comment}".strip(" -"),
                 recommendation="Zweryfikuj zawartość udziału i ogranicz dostęp do uprawnionych.",
                 references=["CWE-284"],
             ))

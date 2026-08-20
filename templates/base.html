@@ -109,6 +109,7 @@
       .status-dot { width: .6rem; height: .6rem; border-radius: 50%; display: inline-block; }
       .st-done { background: #22c55e; } .st-running { background: var(--rc-accent); animation: pulse 1s infinite; }
       .st-error { background: var(--sev-critical); } .st-skipped { background: #475569; }
+      .st-cancelled { background: var(--sev-high); }
       .st-unavailable { background: var(--sev-medium); } .st-pending, .st-queued { background: #334155; }
       @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
 
@@ -135,28 +136,52 @@
                 <ul class="navbar-nav me-auto ms-lg-4">
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if request.endpoint == 'index' }}" href="{{ url_for('index') }}">
-                            <i class="bi bi-grid-1x2 me-1"></i>Panel
+                            <i class="bi bi-grid-1x2 me-1"></i>{{ t('nav.panel') }}
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if request.endpoint == 'rules' }}" href="{{ url_for('rules') }}">
-                            <i class="bi bi-shield-check me-1"></i>Reguły zakresu
+                            <i class="bi bi-shield-check me-1"></i>{{ t('nav.rules') }}
                         </a>
                     </li>
                 </ul>
-                <div class="d-flex align-items-center gap-3">
-                    <button id="themeToggle" class="btn btn-sm btn-outline-secondary theme-toggle" title="Przełącz motyw" type="button">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary theme-toggle dropdown-toggle" type="button"
+                                data-bs-toggle="dropdown" title="{{ t('nav.lang') }}">
+                            <i class="bi bi-translate"></i> {{ current_lang|upper }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            {% for code, name in langs.items() %}
+                            <li><a class="dropdown-item {{ 'active' if code == current_lang }}"
+                                   href="{{ url_for('set_lang', code=code) }}">{{ name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <button id="themeToggle" class="btn btn-sm btn-outline-secondary theme-toggle" title="{{ t('nav.theme') }}" type="button">
                         <i class="bi bi-moon-stars"></i>
                     </button>
                     <span class="hint">
                         <i class="bi bi-person-circle me-1"></i>{{ session['user'] }} ·
-                        <a href="{{ url_for('logout') }}">wyloguj</a>
+                        <a href="{{ url_for('logout') }}">{{ t('nav.logout') }}</a>
                     </span>
                 </div>
             </div>
             {% else %}
-            <div class="ms-auto">
-                <button id="themeToggle" class="btn btn-sm btn-outline-secondary theme-toggle" title="Przełącz motyw" type="button">
+            <div class="ms-auto d-flex align-items-center gap-2">
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary theme-toggle dropdown-toggle" type="button"
+                            data-bs-toggle="dropdown" title="{{ t('nav.lang') }}">
+                        <i class="bi bi-translate"></i> {{ current_lang|upper }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        {% for code, name in langs.items() %}
+                        <li><a class="dropdown-item {{ 'active' if code == current_lang }}"
+                               href="{{ url_for('set_lang', code=code) }}">{{ name }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <button id="themeToggle" class="btn btn-sm btn-outline-secondary theme-toggle" title="{{ t('nav.theme') }}" type="button">
                     <i class="bi bi-moon-stars"></i>
                 </button>
             </div>

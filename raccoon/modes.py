@@ -2,21 +2,21 @@
 
 Każdy adapter ma przypisaną **intensywność** (jak inwazyjne jest wobec celu):
 
-  * ``passive``    — zero pakietów do celu; dane pochodzą ze źródeł zewnętrznych
+  * ``passive``    - zero pakietów do celu; dane pochodzą ze źródeł zewnętrznych
                      (np. Shodan/InternetDB). Bezpieczne bez osobnej zgody na ruch.
-  * ``active``     — bezpośrednia, ale nieinwazyjna enumeracja (ping, skan portów,
+  * ``active``     - bezpośrednia, ale nieinwazyjna enumeracja (ping, skan portów,
                      fingerprint web, DNS). Wysyła ruch do infrastruktury celu.
-  * ``aggressive`` — aktywne sondowanie podatności (sqlmap, INCLUDED) — może
+  * ``aggressive`` - aktywne sondowanie podatności (sqlmap, INCLUDED) - może
                      modyfikować stan/logi i generować alerty.
 
 **Tryb pracy** to *pułap* intensywności wybierany przy uruchomieniu:
 
-  * ``passive`` — tylko kroki pasywne,
-  * ``active``  — kroki pasywne + aktywne (tzw. „bezpośrednio”, bez exploitów),
-  * ``all``     — wszystko, łącznie z agresywnym sondowaniem podatności.
+  * ``passive`` - tylko kroki pasywne,
+  * ``active``  - kroki pasywne + aktywne (tzw. „bezpośrednio”, bez exploitów),
+  * ``all``     - wszystko, łącznie z agresywnym sondowaniem podatności.
 
 Dzięki temu ten sam workflow można uruchomić „na miękko" (recon pasywny) albo
-w pełni — bez definiowania osobnych pipeline'ów.
+w pełni - bez definiowania osobnych pipeline'ów.
 """
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ class Intensity(str, Enum):
 
 class Mode(str, Enum):
     PASSIVE = "passive"
-    ACTIVE = "active"     # „bezpośrednio" — pasywne + aktywne, bez exploitów
+    ACTIVE = "active"     # „bezpośrednio" - pasywne + aktywne, bez exploitów
     ALL = "all"
 
     @property
@@ -67,11 +67,11 @@ _MODE_LABEL = {
 
 _MODE_DESC = {
     "passive": "Tylko dane ze źródeł zewnętrznych (Shodan/InternetDB). "
-               "Zero pakietów do celu — bezpieczny bez osobnej zgody na ruch.",
+               "Zero pakietów do celu - bezpieczny bez osobnej zgody na ruch.",
     "active": "Bezpośrednia enumeracja (ping, porty, web, DNS). "
               "Bez aktywnego sondowania podatności (sqlmap/INCLUDED).",
     "all": "Pełny łańcuch, łącznie z sondowaniem SQLi/LFI/RFI. "
-           "Najbardziej inwazyjny — wymaga pełnej autoryzacji.",
+           "Najbardziej inwazyjny - wymaga pełnej autoryzacji.",
 }
 
 DEFAULT_MODE = Mode.ALL

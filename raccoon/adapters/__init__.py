@@ -1,4 +1,4 @@
-"""Rejestr adapterów narzędzi — mapa nazwa -> instancja."""
+"""Rejestr adapterów narzędzi - mapa nazwa -> instancja."""
 from __future__ import annotations
 
 from .base import AdapterResult, RunContext, ToolAdapter, ToolUnavailable

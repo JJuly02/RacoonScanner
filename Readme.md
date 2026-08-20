@@ -30,6 +30,15 @@ Workflow (YAML) → Tool Adapters → Finding model → Compliance engine → Re
 - **Raport** (`raccoon/report.py`) — offline HTML z filtrem severity, triage
   i macierzą zgodności.
 
+## Interfejs i raport
+
+Panel obsługuje **motyw jasny/ciemny** (ciemny domyślnie) oraz **przełącznik języka
+PL/EN** (górny pasek). Skan można **zatrzymać** w trakcie, a podwójne kliknięcie
+„Uruchom" nie wystartuje dwóch identycznych skanów. Raport HTML ma **rozwijane
+wyjaśnienia** przy znaleziskach (np. co oznacza otwarty port 22) i przy kontrolach
+w macierzy zgodności; whatweb pokazuje **pełny odcisk technologiczny** celu, nawet
+gdy nic krytycznego nie wykryto.
+
 ## Tryby pracy
 
 Każdy workflow można uruchomić w jednym z trzech **trybów** (pułap intensywności):

@@ -2,7 +2,7 @@
 
 Adapter opakowuje jedno narzędzie CLI: buduje komendę, uruchamia ją jako
 podproces i sprowadza surowy wynik do listy `Finding`. Logika parsowania
-(`_parse`) jest czysta i nie odpala podprocesów — dzięki temu testuje się ją na
+(`_parse`) jest czysta i nie odpala podprocesów - dzięki temu testuje się ją na
 próbkach wyjścia bez instalowania Kali.
 """
 from __future__ import annotations
@@ -41,7 +41,7 @@ def available(binary: str) -> bool:
 class ToolAdapter:
     name: str = ""
     binary: str = ""
-    # Domyślna intensywność — bezpośrednia, nieinwazyjna enumeracja.
+    # Domyślna intensywność - bezpośrednia, nieinwazyjna enumeracja.
     # Adaptery pasywne (Shodan) i agresywne (sqlmap/INCLUDED) nadpisują to pole.
     intensity: Intensity = Intensity.ACTIVE
 

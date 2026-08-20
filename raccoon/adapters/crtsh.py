@@ -1,6 +1,6 @@
-"""Adapter: crt.sh — Certificate Transparency (pasywne odkrywanie subdomen).
+"""Adapter: crt.sh - Certificate Transparency (pasywne odkrywanie subdomen).
 
-Pyta publiczne logi CT przez https://crt.sh (JSON) — zero pakietów do celu.
+Pyta publiczne logi CT przez https://crt.sh (JSON) - zero pakietów do celu.
 Certyfikaty TLS ujawniają nazwy hostów (CN + SAN), więc CT to jedno z pierwszych
 i najskuteczniejszych źródeł subdomen. Używa stdlib `urllib` (bez zależności).
 """
@@ -41,7 +41,7 @@ class CrtShAdapter(ToolAdapter):
         timeout = int(ctx.options.get("timeout", 30))
         retries = int(ctx.options.get("retries", 2))
         url = CRTSH_URL.format(q=urllib.parse.quote(f"%.{domain}"))
-        # crt.sh bywa przeciążony (502/503) — kilka prób z krótkim backoffem.
+        # crt.sh bywa przeciążony (502/503) - kilka prób z krótkim backoffem.
         raw = ""
         for attempt in range(retries + 1):
             try:
@@ -95,7 +95,7 @@ class CrtShAdapter(ToolAdapter):
             asset=domain,
             tool="crtsh",
             evidence=preview,
-            recommendation="Każda subdomena z logów CT to element powierzchni ataku — "
+            recommendation="Każda subdomena z logów CT to element powierzchni ataku - "
                            "zinwentaryzuj i sprawdź, czy któraś nie jest zapomniana/porzucona.",
             references=["CWE-200"],
         )]

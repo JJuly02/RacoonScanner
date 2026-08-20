@@ -1,15 +1,15 @@
-"""Adapter: Shodan — pasywna enumeracja hosta (zero pakietów do celu).
+"""Adapter: Shodan - pasywna enumeracja hosta (zero pakietów do celu).
 
-Odpytuje *istniejący* zbiór danych Shodana — cały ruch idzie wyłącznie do API
+Odpytuje *istniejący* zbiór danych Shodana - cały ruch idzie wyłącznie do API
 Shodana, nic nie leci do infrastruktury klienta. To flagowe źródło trybu
 pasywnego.
 
 Dwa źródła (opcja `api`):
-  * ``internetdb`` — https://internetdb.shodan.io — darmowe, bez klucza, bez
+  * ``internetdb`` - https://internetdb.shodan.io - darmowe, bez klucza, bez
     kredytów. Zwraca porty, hostnames, CPE, tagi i CVE (bez bannerów/SSL).
-  * ``shodan``     — pełny rekord hosta (https://api.shodan.io). Wymaga klucza
+  * ``shodan``     - pełny rekord hosta (https://api.shodan.io). Wymaga klucza
     (`SHODAN_API_KEY`) i kosztuje 1 kredyt zapytania na hosta.
-  * ``auto``       — (domyślne) użyj pełnego Shodana, gdy klucz jest ustawiony;
+  * ``auto``       - (domyślne) użyj pełnego Shodana, gdy klucz jest ustawiony;
     w przeciwnym razie InternetDB.
 
 Klucz API czytany jest wyłącznie ze zmiennej środowiskowej ``SHODAN_API_KEY``
@@ -39,16 +39,16 @@ SHODAN_RESOLVE_URL = "https://api.shodan.io/dns/resolve"
 # Usługi, których gołe wystawienie na świat traktujemy jako podwyższone ryzyko
 # (spójne z adapterem nmap).
 _RISKY = {
-    23: (Severity.HIGH, "telnet", "Telnet przesyła dane otwartym tekstem — wyłącz na rzecz SSH."),
-    21: (Severity.MEDIUM, "ftp", "FTP bez TLS przesyła poświadczenia otwartym tekstem — rozważ SFTP/FTPS."),
-    445: (Severity.MEDIUM, "smb", "SMB wystawiony na zewnątrz — ogranicz dostęp firewallem."),
-    139: (Severity.MEDIUM, "netbios", "NetBIOS/SMB wystawiony na zewnątrz — ogranicz dostęp."),
-    3389: (Severity.MEDIUM, "rdp", "RDP wystawiony publicznie — użyj VPN/bastion i MFA."),
-    5900: (Severity.HIGH, "vnc", "VNC często bez silnej autentykacji — ogranicz dostęp."),
-    3306: (Severity.MEDIUM, "mysql", "Baza danych dostępna z zewnątrz — ogranicz do zaufanych sieci."),
-    5432: (Severity.MEDIUM, "postgresql", "Baza danych dostępna z zewnątrz — ogranicz do zaufanych sieci."),
-    27017: (Severity.HIGH, "mongodb", "MongoDB wystawiony publicznie bywa nieuwierzytelniony — ogranicz dostęp."),
-    6379: (Severity.HIGH, "redis", "Redis domyślnie bez auth — nie wystawiaj publicznie."),
+    23: (Severity.HIGH, "telnet", "Telnet przesyła dane otwartym tekstem - wyłącz na rzecz SSH."),
+    21: (Severity.MEDIUM, "ftp", "FTP bez TLS przesyła poświadczenia otwartym tekstem - rozważ SFTP/FTPS."),
+    445: (Severity.MEDIUM, "smb", "SMB wystawiony na zewnątrz - ogranicz dostęp firewallem."),
+    139: (Severity.MEDIUM, "netbios", "NetBIOS/SMB wystawiony na zewnątrz - ogranicz dostęp."),
+    3389: (Severity.MEDIUM, "rdp", "RDP wystawiony publicznie - użyj VPN/bastion i MFA."),
+    5900: (Severity.HIGH, "vnc", "VNC często bez silnej autentykacji - ogranicz dostęp."),
+    3306: (Severity.MEDIUM, "mysql", "Baza danych dostępna z zewnątrz - ogranicz do zaufanych sieci."),
+    5432: (Severity.MEDIUM, "postgresql", "Baza danych dostępna z zewnątrz - ogranicz do zaufanych sieci."),
+    27017: (Severity.HIGH, "mongodb", "MongoDB wystawiony publicznie bywa nieuwierzytelniony - ogranicz dostęp."),
+    6379: (Severity.HIGH, "redis", "Redis domyślnie bez auth - nie wystawiaj publicznie."),
 }
 
 
@@ -110,7 +110,7 @@ class ShodanAdapter(ToolAdapter):
         if api == "auto":
             api = "shodan" if key else "internetdb"
         if api == "shodan" and not key:
-            api = "internetdb"      # brak klucza — degradujemy do darmowego źródła
+            api = "internetdb"      # brak klucza - degradujemy do darmowego źródła
         timeout = int(ctx.options.get("timeout", 30))
 
         host = host_of(ctx.target)
@@ -168,7 +168,7 @@ class ShodanAdapter(ToolAdapter):
             confidence=Confidence.MEDIUM,
             asset=asset,
             tool="shodan",
-            evidence=(f"{cve} — {detail}".strip(" —") or cve),
+            evidence=(f"{cve} - {detail}".strip(" -") or cve),
             recommendation="Zweryfikuj wersję usługi i zainstaluj poprawki producenta; "
                            "podatność wskazana przez pasywny zbiór Shodana wymaga potwierdzenia.",
             references=[cve, "CWE-1035"] if cve.upper().startswith("CVE-") else [cve],
@@ -194,7 +194,7 @@ class ShodanAdapter(ToolAdapter):
                 asset=ip,
                 tool="shodan",
                 evidence=str(cpe),
-                recommendation="Ujawniona wersja ułatwia dobranie exploita — rozważ ukrycie bannera i aktualizację.",
+                recommendation="Ujawniona wersja ułatwia dobranie exploita - rozważ ukrycie bannera i aktualizację.",
                 references=["CWE-200"],
             ))
         artifacts: dict = {"hosts": [ip]}
@@ -224,7 +224,7 @@ class ShodanAdapter(ToolAdapter):
                     asset=f"{real_ip}:{port}",
                     tool="shodan",
                     evidence=banner,
-                    recommendation="Ujawniona wersja ułatwia dobranie exploita — rozważ ukrycie bannera i aktualizację.",
+                    recommendation="Ujawniona wersja ułatwia dobranie exploita - rozważ ukrycie bannera i aktualizację.",
                     references=["CWE-200"],
                 ))
             svc_name = (svc.get("_shodan", {}) or {}).get("module", "") if isinstance(svc.get("_shodan"), dict) else ""

@@ -1,6 +1,6 @@
-"""Adapter: whois — pierwsza faza rozpoznania domeny/IP.
+"""Adapter: whois - pierwsza faza rozpoznania domeny/IP.
 
-Odpytuje serwery whois (rejestr domen / RIR), nie dotyka infrastruktury celu —
+Odpytuje serwery whois (rejestr domen / RIR), nie dotyka infrastruktury celu -
 dlatego traktujemy go jako pasywny. Wyciąga rejestratora, organizację, daty
 utworzenia/wygaśnięcia, nameservery i kontakt abuse. Ostrzega o bliskim
 wygaśnięciu domeny.
@@ -90,14 +90,14 @@ class WhoisAdapter(ToolAdapter):
                     title=f"Domena {domain} WYGASŁA ({vals['expires']})",
                     category="domain-expiry", severity=Severity.HIGH, confidence=Confidence.HIGH,
                     asset=domain, tool="whois", evidence=f"Data wygaśnięcia: {vals['expires']}",
-                    recommendation="Domena wygasła — ryzyko przejęcia (domain hijacking). Odnów natychmiast.",
+                    recommendation="Domena wygasła - ryzyko przejęcia (domain hijacking). Odnów natychmiast.",
                 ))
             elif days <= 30:
                 findings.append(Finding(
                     title=f"Domena {domain} wygasa za {days} dni",
                     category="domain-expiry", severity=Severity.MEDIUM, confidence=Confidence.HIGH,
                     asset=domain, tool="whois", evidence=f"Data wygaśnięcia: {vals['expires']}",
-                    recommendation="Zbliża się wygaśnięcie domeny — odnów, by uniknąć przerw i przejęcia.",
+                    recommendation="Zbliża się wygaśnięcie domeny - odnów, by uniknąć przerw i przejęcia.",
                 ))
 
         artifacts = {"nameservers": nameservers} if nameservers else {}

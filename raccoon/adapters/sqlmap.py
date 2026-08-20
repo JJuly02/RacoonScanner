@@ -1,4 +1,4 @@
-"""Adapter: sqlmap — wykrywanie SQL injection (parsuje stdout)."""
+"""Adapter: sqlmap - wykrywanie SQL injection (parsuje stdout)."""
 from __future__ import annotations
 
 import re
@@ -47,7 +47,7 @@ class SqlmapAdapter(ToolAdapter):
                 tool="sqlmap",
                 evidence=(evidence or "sqlmap potwierdził injection") +
                          (f"\nTypy: {', '.join(types)}" if types else ""),
-                recommendation="Użyj zapytań parametryzowanych/ORM i waliduj wejście — nie sklejaj SQL ze stringów.",
+                recommendation="Użyj zapytań parametryzowanych/ORM i waliduj wejście - nie sklejaj SQL ze stringów.",
                 references=["CWE-89", "OWASP-A03"],
             ))
         elif _NOT_VULN.search(raw):
@@ -59,6 +59,6 @@ class SqlmapAdapter(ToolAdapter):
                 asset=url,
                 tool="sqlmap",
                 evidence="sqlmap: brak podatnych parametrów w tej rundzie",
-                recommendation="Brak wykrycia nie jest dowodem bezpieczeństwa — rozważ szersze testy manualne.",
+                recommendation="Brak wykrycia nie jest dowodem bezpieczeństwa - rozważ szersze testy manualne.",
             ))
         return AdapterResult(findings=findings)

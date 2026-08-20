@@ -1,7 +1,7 @@
 """Deklaratywne definicje workflow (pipeline'ów) recon.
 
 Workflow to nazwana sekwencja kroków (Stage). Każdy krok wskazuje adapter
-narzędzia, jego opcje oraz opcjonalny warunek `requires` — klucz, który musi
+narzędzia, jego opcje oraz opcjonalny warunek `requires` - klucz, który musi
 pojawić się we współdzielonym kontekście (artefaktach poprzednich kroków), żeby
 krok się wykonał. Dzięki temu np. whatweb odpala się tylko, gdy nmap znalazł
 `web_targets`.

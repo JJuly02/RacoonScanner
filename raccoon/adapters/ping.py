@@ -1,4 +1,4 @@
-"""Adapter: ping — sprawdzenie dostępności hosta (faza discovery)."""
+"""Adapter: ping - sprawdzenie dostępności hosta (faza discovery)."""
 from __future__ import annotations
 
 import re
@@ -34,7 +34,7 @@ class PingAdapter(ToolAdapter):
                 asset=host,
                 tool="ping",
                 evidence=f"packet loss: {loss}%",
-                recommendation="Host aktywny — kontynuuj enumerację.",
+                recommendation="Host aktywny - kontynuuj enumerację.",
             )
             return AdapterResult(findings=[f], artifacts={"hosts": [host]},
                                  raw_files={"ping.txt": raw})
@@ -46,6 +46,6 @@ class PingAdapter(ToolAdapter):
             asset=host,
             tool="ping",
             evidence="100% packet loss (ICMP może być filtrowany)",
-            recommendation="Brak odpowiedzi ICMP nie oznacza, że host jest offline — spróbuj skanu TCP.",
+            recommendation="Brak odpowiedzi ICMP nie oznacza, że host jest offline - spróbuj skanu TCP.",
         )
         return AdapterResult(findings=[f], artifacts={}, raw_files={"ping.txt": raw})

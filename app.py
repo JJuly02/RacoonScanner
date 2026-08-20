@@ -1,4 +1,4 @@
-"""RacoonScanner — web dashboard orkiestracji recon + audytu zgodności."""
+"""RacoonScanner - web dashboard orkiestracji recon + audytu zgodności."""
 from __future__ import annotations
 
 import os
@@ -6,7 +6,7 @@ import os
 from flask import (Flask, abort, flash, redirect, render_template, request,
                    send_file, send_from_directory, session, url_for)
 
-from raccoon import auth, modes, scope
+from raccoon import auth, i18n, modes, scope
 from raccoon.runner import Runner
 from raccoon.store import Store, safe_name
 from raccoon.workflow import available_workflows, load_workflow
@@ -20,7 +20,7 @@ os.makedirs(PROJECTS_DIR, exist_ok=True)
 os.makedirs(PRIVATE_DIR, exist_ok=True)
 
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024  # 1 MB — ochrona przed wielkim uploadem
+app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024  # 1 MB - ochrona przed wielkim uploadem
 
 # --- klucz sesji ---
 if os.path.exists(SECRET_KEY_FILE):
@@ -37,6 +37,19 @@ else:
 auth.ensure_credentials(PRIVATE_DIR)
 store = Store(PROJECTS_DIR)
 runner = Runner(store)
+
+
+@app.context_processor
+def _inject_i18n():
+    lang = i18n.normalize(session.get("lang"))
+    return {"t": lambda key: i18n.t(key, lang), "current_lang": lang, "langs": i18n.LANGS}
+
+
+@app.route("/lang/<code>")
+def set_lang(code):
+    # Zmiana języka dostępna też przed logowaniem (na stronie logowania).
+    session["lang"] = i18n.normalize(code)
+    return redirect(request.referrer or url_for("index"))
 
 
 # --- auth ---
@@ -125,7 +138,7 @@ def _start_scan():
         flash("Nieznany workflow.", "error")
         return redirect(url_for("index"))
     if not auth.rate_ok(f"scan:{request.remote_addr}", limit=5, window=60):
-        flash("Zbyt wiele uruchomień — odczekaj chwilę.", "error")
+        flash("Zbyt wiele uruchomień - odczekaj chwilę.", "error")
         return redirect(url_for("index"))
 
     started: list[tuple[str, str]] = []
@@ -190,14 +203,38 @@ def run_status(project, run_id):
     return meta
 
 
+@app.route("/run/<project>/<run_id>/stop", methods=["POST"])
+@auth.login_required
+def stop_run(project, run_id):
+    project, run_id = safe_name(project), safe_name(run_id)
+    if runner.cancel(project, run_id):
+        auth.audit(PRIVATE_DIR, "scan_stop", f"{project}/{run_id}")
+        flash("Wysłano żądanie zatrzymania - skan zakończy bieżący krok i przerwie.", "warning")
+    else:
+        flash("Skan nie jest już aktywny (zakończony lub nieistniejący).", "error")
+    return redirect(url_for("view_run", project=project, run_id=run_id))
+
+
 @app.route("/run/<project>/<run_id>/report")
 @auth.login_required
 def run_report(project, run_id):
-    path = os.path.join(store.run_dir(safe_name(project), safe_name(run_id)), "report.html")
-    if not os.path.exists(path):
-        flash("Raport nie jest jeszcze gotowy.", "error")
-        return redirect(url_for("view_run", project=project, run_id=run_id))
-    return send_file(path)
+    project, run_id = safe_name(project), safe_name(run_id)
+    meta = store.load_meta(project, run_id)
+    rows = store.load_findings(project, run_id)
+    if meta is None or not os.path.exists(
+            os.path.join(store.run_dir(project, run_id), "findings.json")):
+        # raport jeszcze niegotowy lub brak znalezisk zapisanych na dysku
+        path = os.path.join(store.run_dir(project, run_id), "report.html")
+        if not os.path.exists(path):
+            flash("Raport nie jest jeszcze gotowy.", "error")
+            return redirect(url_for("view_run", project=project, run_id=run_id))
+        return send_file(path)
+    # Regeneruj raport w aktualnym języku UI (chrome PL/EN), z zapisanych znalezisk.
+    from raccoon.findings import Finding
+    from raccoon import report
+    findings = [Finding.from_dict(d) for d in rows]
+    lang = i18n.normalize(session.get("lang"))
+    return report.generate(findings, meta, lang=lang)
 
 
 @app.route("/run/<project>/<run_id>/export.json")
@@ -269,7 +306,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(
         prog="racoonscanner",
-        description="RacoonScanner — lokalny panel orkiestracji recon (jak OpenVAS, tylko lżej).",
+        description="RacoonScanner - lokalny panel orkiestracji recon (jak OpenVAS, tylko lżej).",
     )
     parser.add_argument("--pageview", "--web", dest="pageview", action="store_true",
                         help="uruchom panel i otwórz go w przeglądarce (łatwe ustawianie skanów).")

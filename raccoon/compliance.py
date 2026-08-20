@@ -1,4 +1,4 @@
-"""Silnik zgodności — mapowanie znalezisk na wymogi regulacyjne.
+"""Silnik zgodności - mapowanie znalezisk na wymogi regulacyjne.
 
 Każda kategoria znaleziska trafia na zbiór kontroli z frameworków: NIS2,
 polska UKSC (Ustawa o Krajowym Systemie Cyberbezpieczeństwa), ISO/IEC 27001
@@ -13,23 +13,23 @@ from .findings import Finding, sort_by_risk
 
 # Ludzko czytelne etykiety kontroli.
 CONTROLS: dict[str, str] = {
-    "NIS2:art.21.2.a": "NIS2 art. 21(2)(a) — analiza ryzyka i bezpieczeństwo systemów",
-    "NIS2:art.21.2.b": "NIS2 art. 21(2)(b) — obsługa incydentów",
-    "NIS2:art.21.2.e": "NIS2 art. 21(2)(e) — bezpieczeństwo nabywania, rozwoju i utrzymania systemów",
-    "NIS2:art.21.2.f": "NIS2 art. 21(2)(f) — ocena skuteczności środków zarządzania ryzykiem",
-    "NIS2:art.21.2.g": "NIS2 art. 21(2)(g) — podstawowa cyberhigiena",
-    "NIS2:art.21.2.h": "NIS2 art. 21(2)(h) — kryptografia i szyfrowanie",
-    "UKSC:art.8": "UKSC art. 8 — wdrożenie zabezpieczeń adekwatnych do ryzyka",
-    "UKSC:art.10": "UKSC art. 10 — utrzymanie i aktualizacja systemów, zarządzanie podatnościami",
-    "UKSC:art.14": "UKSC art. 14 — obsługa i zgłaszanie incydentów",
-    "ISO27001:A.8.8": "ISO/IEC 27001 A.8.8 — zarządzanie podatnościami technicznymi",
-    "ISO27001:A.8.9": "ISO/IEC 27001 A.8.9 — zarządzanie konfiguracją",
-    "ISO27001:A.8.20": "ISO/IEC 27001 A.8.20 — bezpieczeństwo sieci",
-    "ISO27001:A.8.23": "ISO/IEC 27001 A.8.23 — filtrowanie ruchu web",
-    "ISO27001:A.8.24": "ISO/IEC 27001 A.8.24 — kryptografia",
-    "ISO27001:A.8.28": "ISO/IEC 27001 A.8.28 — bezpieczne kodowanie",
-    "DORA:art.9": "DORA art. 9 — ochrona i prewencja ICT",
-    "PCI:4.1": "PCI DSS 4.1 — silna kryptografia w transmisji",
+    "NIS2:art.21.2.a": "NIS2 art. 21(2)(a) - analiza ryzyka i bezpieczeństwo systemów",
+    "NIS2:art.21.2.b": "NIS2 art. 21(2)(b) - obsługa incydentów",
+    "NIS2:art.21.2.e": "NIS2 art. 21(2)(e) - bezpieczeństwo nabywania, rozwoju i utrzymania systemów",
+    "NIS2:art.21.2.f": "NIS2 art. 21(2)(f) - ocena skuteczności środków zarządzania ryzykiem",
+    "NIS2:art.21.2.g": "NIS2 art. 21(2)(g) - podstawowa cyberhigiena",
+    "NIS2:art.21.2.h": "NIS2 art. 21(2)(h) - kryptografia i szyfrowanie",
+    "UKSC:art.8": "UKSC art. 8 - wdrożenie zabezpieczeń adekwatnych do ryzyka",
+    "UKSC:art.10": "UKSC art. 10 - utrzymanie i aktualizacja systemów, zarządzanie podatnościami",
+    "UKSC:art.14": "UKSC art. 14 - obsługa i zgłaszanie incydentów",
+    "ISO27001:A.8.8": "ISO/IEC 27001 A.8.8 - zarządzanie podatnościami technicznymi",
+    "ISO27001:A.8.9": "ISO/IEC 27001 A.8.9 - zarządzanie konfiguracją",
+    "ISO27001:A.8.20": "ISO/IEC 27001 A.8.20 - bezpieczeństwo sieci",
+    "ISO27001:A.8.23": "ISO/IEC 27001 A.8.23 - filtrowanie ruchu web",
+    "ISO27001:A.8.24": "ISO/IEC 27001 A.8.24 - kryptografia",
+    "ISO27001:A.8.28": "ISO/IEC 27001 A.8.28 - bezpieczne kodowanie",
+    "DORA:art.9": "DORA art. 9 - ochrona i prewencja ICT",
+    "PCI:4.1": "PCI DSS 4.1 - silna kryptografia w transmisji",
 }
 
 # Kategoria znaleziska -> lista kontroli.
@@ -40,6 +40,7 @@ CATEGORY_MAP: dict[str, list[str]] = {
     "service-version":["NIS2:art.21.2.f", "UKSC:art.10", "ISO27001:A.8.8"],
     "known-vuln":     ["NIS2:art.21.2.f", "UKSC:art.10", "ISO27001:A.8.8", "DORA:art.9"],
     "web-tech":       ["NIS2:art.21.2.g", "ISO27001:A.8.8", "ISO27001:A.8.9"],
+    "web-fingerprint": ["NIS2:art.21.2.g", "ISO27001:A.8.9"],
     "dns-record":     ["NIS2:art.21.2.a", "ISO27001:A.8.20"],
     "domain-info":    ["NIS2:art.21.2.a", "ISO27001:A.8.20"],
     "domain-expiry":  ["NIS2:art.21.2.a", "UKSC:art.8", "ISO27001:A.8.9"],

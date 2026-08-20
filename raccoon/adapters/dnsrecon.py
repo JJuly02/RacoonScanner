@@ -7,7 +7,7 @@ import os
 from ..findings import Confidence, Finding, Severity
 from ..netutil import host_of
 from ..modes import Intensity
-from .base import AdapterResult, RunContext, ToolAdapter
+from .base import AdapterResult, RunContext, ToolAdapter, strip_ansi
 
 
 class DnsreconAdapter(ToolAdapter):
@@ -18,14 +18,14 @@ class DnsreconAdapter(ToolAdapter):
     def run(self, ctx: RunContext) -> AdapterResult:
         domain = host_of(ctx.target)
         out_path = os.path.join(ctx.workdir, "dnsrecon.json")
-        self._exec(["dnsrecon", "-d", domain, "-j", out_path],
-                   timeout=ctx.options.get("timeout", 180))
+        _, out = self._exec(["dnsrecon", "-d", domain, "-j", out_path],
+                            timeout=ctx.options.get("timeout", 180))
         raw = ""
         if os.path.exists(out_path):
             with open(out_path, encoding="utf-8", errors="replace") as fh:
                 raw = fh.read()
         res = self._parse(raw, domain)
-        res.raw_files["dnsrecon.json"] = raw
+        res.raw_files["dnsrecon.txt"] = strip_ansi(out) or "(brak wyjscia)"
         return res
 
     def _parse(self, raw: str, domain: str) -> AdapterResult:

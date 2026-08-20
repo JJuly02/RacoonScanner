@@ -58,7 +58,11 @@ class CrtShAdapter(ToolAdapter):
                     break
             time.sleep(2 * (attempt + 1))
         res = self._parse(raw, domain)
-        res.raw_files["crtsh.json"] = raw
+        try:
+            pretty = json.dumps(json.loads(raw), ensure_ascii=False, indent=2) if raw.strip() else raw
+        except (json.JSONDecodeError, ValueError):
+            pretty = raw
+        res.raw_files["crtsh.json"] = pretty
         return res
 
     def _parse(self, raw: str, domain: str) -> AdapterResult:

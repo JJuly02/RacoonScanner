@@ -7,6 +7,7 @@ próbkach wyjścia bez instalowania Kali.
 """
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 from dataclasses import dataclass, field
@@ -32,6 +33,14 @@ class AdapterResult:
     findings: list[Finding] = field(default_factory=list)
     artifacts: dict = field(default_factory=dict)   # trafia do shared context
     raw_files: dict = field(default_factory=dict)   # nazwa -> treść, zapisywane przez executor
+
+
+_ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+
+
+def strip_ansi(text: str) -> str:
+    """Usuwa sekwencje ANSI (kolory) z wyjscia narzedzia, by log czytal sie jak z terminala."""
+    return _ANSI.sub("", text or "")
 
 
 def available(binary: str) -> bool:

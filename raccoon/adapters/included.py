@@ -11,7 +11,7 @@ import os
 
 from ..findings import Confidence, Finding, Severity
 from ..modes import Intensity
-from .base import AdapterResult, RunContext, ToolAdapter
+from .base import AdapterResult, RunContext, ToolAdapter, strip_ansi
 
 # Moduły RCE (wykonanie kodu) vs. read (odczyt plików).
 _RCE_MODULES = {"data", "input", "expect", "zip_phar", "log_poison", "filter_chain_rce", "rfi"}
@@ -34,14 +34,14 @@ class IncludedAdapter(ToolAdapter):
                     "--no-banner", "-o", out_path, "-of", "json"]
             if ctx.options.get("cmd"):
                 argv += ["--cmd", ctx.options["cmd"]]
-            self._exec(argv, timeout=ctx.options.get("timeout", 300))
+            _, out = self._exec(argv, timeout=ctx.options.get("timeout", 300))
             raw = ""
             if os.path.exists(out_path):
                 with open(out_path, encoding="utf-8", errors="replace") as fh:
                     raw = fh.read()
             res = self._parse(raw, url)
             merged.findings += res.findings
-            merged.raw_files[f"included_{i}.json"] = raw
+            merged.raw_files[f"included_{i}.txt"] = strip_ansi(out) or "(brak wyjscia)"
         return merged
 
     def _parse(self, raw: str, url: str) -> AdapterResult:

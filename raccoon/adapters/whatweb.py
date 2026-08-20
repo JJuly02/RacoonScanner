@@ -6,7 +6,7 @@ import os
 
 from ..findings import Confidence, Finding, Severity
 from ..modes import Intensity
-from .base import AdapterResult, RunContext, ToolAdapter
+from .base import AdapterResult, RunContext, ToolAdapter, strip_ansi
 
 # Pluginy, które oznaczają technologię wartą osobnego findingu (ekspozycja/wersja).
 _NOTABLE = {"apache", "nginx", "php", "wordpress", "joomla", "drupal", "iis",
@@ -23,9 +23,9 @@ class WhatwebAdapter(ToolAdapter):
         merged = AdapterResult()
         for i, url in enumerate(dict.fromkeys(urls)):
             out_path = os.path.join(ctx.workdir, f"whatweb_{i}.json")
-            self._exec(["whatweb", "-a", "3", "--no-errors",
-                        f"--log-json={out_path}", url],
-                       timeout=ctx.options.get("timeout", 120))
+            _, out = self._exec(["whatweb", "-a", "3", "--no-errors",
+                                 f"--log-json={out_path}", url],
+                                timeout=ctx.options.get("timeout", 120))
             raw = ""
             if os.path.exists(out_path):
                 with open(out_path, encoding="utf-8", errors="replace") as fh:
@@ -35,7 +35,7 @@ class WhatwebAdapter(ToolAdapter):
             for k, v in res.artifacts.items():
                 merged.artifacts.setdefault(k, [])
                 merged.artifacts[k] += v
-            merged.raw_files[f"whatweb_{i}.json"] = raw
+            merged.raw_files[f"whatweb_{i}.txt"] = strip_ansi(out) or "(brak wyjscia)"
         return merged
 
     def _parse(self, raw: str, url: str) -> AdapterResult:

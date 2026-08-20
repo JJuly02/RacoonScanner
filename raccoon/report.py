@@ -21,8 +21,13 @@ from .findings import Finding, sort_by_risk
 _SEV_ORDER = ["critical", "high", "medium", "low", "info"]
 _SEV_RANK = {"critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0}
 _SEV_COLOR = {
-    "critical": "#e5484d", "high": "#f76808", "medium": "#f5d90a",
-    "low": "#46a758", "info": "#5b9dd9",
+    "critical": "#ef4444", "high": "#f97316", "medium": "#eab308",
+    "low": "#3b82f6", "info": "#64748b",
+}
+# przezroczyste tla chipow severity (spojne z sev-chip w UI aplikacji)
+_SEV_BG = {
+    "critical": "rgba(239,68,68,.13)", "high": "rgba(249,115,22,.13)",
+    "medium": "rgba(234,179,8,.14)", "low": "rgba(59,130,246,.13)", "info": "rgba(100,116,139,.16)",
 }
 
 
@@ -113,6 +118,10 @@ def generate(findings: list[Finding], meta: dict, lang: str = "pl") -> str:
         L_findings_h=L("report.findings"),
         L_footer=L("report.footer"),
     )
+
+
+def _sev_badge(sev: str) -> str:
+    return (f'<span class="scv sc-{sev}"><span class="dot"></span>{sev}</span>')
 
 
 def _color_for_rank(rank: int) -> str:
@@ -276,8 +285,7 @@ def _matrix_row(c) -> str:
     return (f'<tr><td><code>{html.escape(c.control)}</code></td>'
             f'<td>{html.escape(c.label)}</td>'
             f'<td class="center">{c.hits}</td>'
-            f'<td class="center"><span class="badge" style="background:{_color_for_rank(c.max_severity_rank)}">'
-            f'{_name_for_rank(c.max_severity_rank)}</span></td></tr>')
+            f'<td class="center">{_sev_badge(_name_for_rank(c.max_severity_rank))}</td></tr>')
 
 
 def _finding_card(f: Finding, L) -> str:
@@ -290,7 +298,7 @@ def _finding_card(f: Finding, L) -> str:
 <div class="card sev-{f.severity.value}" data-sev="{f.severity.value}" data-id="{f.id}">
   <div class="card-head" onclick="toggle('{f.id}')">
     <input type="checkbox" class="triage" data-id="{f.id}" onclick="event.stopPropagation();triage(this)">
-    <span class="badge" style="background:{_SEV_COLOR[f.severity.value]}">{f.severity.value}</span>
+    {_sev_badge(f.severity.value)}
     <span class="conf">conf: {f.confidence.value}</span>
     <span class="tool">{html.escape(f.tool)}</span>
     <span class="title">{html.escape(f.title)}</span>
@@ -312,77 +320,120 @@ _TEMPLATE = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RacoonScanner - {L_title} {run_id}</title>
 <style>
-:root{{--bg:#0f1419;--panel:#1a2029;--panel2:#141a21;--line:#2a323d;--fg:#e6edf3;--muted:#8b98a5;--accent:#2dd4bf;}}
+:root{{
+  --bg:#0e1116;--surface:#171b22;--surface-2:#1e232c;--line:#2a303b;
+  --fg:#e6e8eb;--muted:#9aa4b2;--accent:#f59e0b;--accent-rgb:245,158,11;
+  --sev-critical:#ef4444;--sev-high:#f97316;--sev-medium:#eab308;--sev-low:#3b82f6;--sev-info:#64748b;
+}}
 *{{box-sizing:border-box}}
-body{{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif}}
-.wrap{{max-width:1120px;margin:0 auto;padding:24px}}
-header{{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:20px}}
-h1{{margin:0 0 4px;font-size:22px}}
+body{{
+  margin:0;color:var(--fg);
+  background:radial-gradient(1100px 560px at 100% -8%, rgba(var(--accent-rgb),.06), transparent 60%),var(--bg);
+  background-attachment:fixed;
+  font:14.5px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}}
+.wrap{{max-width:1120px;margin:0 auto;padding:28px 24px 48px}}
+a{{color:var(--accent);text-decoration:none}}
+header{{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:8px}}
+h1{{margin:0 0 6px;font-size:23px;letter-spacing:.2px}}
 h1 .rc{{color:var(--accent)}}
-h2{{font-size:15px;margin:26px 0 12px;border-left:3px solid var(--accent);padding-left:10px;text-transform:uppercase;letter-spacing:.4px}}
-.meta{{color:var(--muted);font-size:13px}}
+h2{{font-size:13px;margin:30px 0 14px;padding-left:11px;border-left:3px solid var(--accent);
+   text-transform:uppercase;letter-spacing:.8px;color:var(--fg);font-weight:700}}
+.meta{{color:var(--muted);font-size:13px;line-height:1.9}}
 .meta code{{color:var(--fg)}}
-.section-note{{color:var(--muted);font-size:12.5px;margin:0 0 10px}}
-.tiles{{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}}
-.tile,.scorebox{{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px;min-width:88px;text-align:center}}
-.tile-num{{display:block;font-size:24px;font-weight:700}}
-.tile-label{{color:var(--muted);text-transform:uppercase;font-size:11px;letter-spacing:.5px}}
+.section-note{{color:var(--muted);font-size:12.5px;margin:-4px 0 14px;max-width:820px}}
+code{{background:var(--surface-2);border:1px solid var(--line);padding:1px 6px;border-radius:5px;font-size:12px;
+   font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--fg)}}
+.muted{{color:var(--muted)}}
+.center{{text-align:center}}
+
+/* kafelki podsumowania */
+.tiles{{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 6px}}
+.tile,.scorebox{{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 18px;min-width:92px;text-align:center}}
+.tile-num{{display:block;font-size:25px;font-weight:800;line-height:1.1}}
+.tile-label{{color:var(--muted);text-transform:uppercase;font-size:10.5px;letter-spacing:.6px;margin-top:2px}}
+.scorebox{{border-color:rgba(var(--accent-rgb),.35)}}
 .scorebox .tile-num{{color:var(--accent)}}
-.overview{{display:grid;grid-template-columns:minmax(240px,1fr) minmax(260px,1.3fr);gap:16px;align-items:stretch}}
-@media(max-width:720px){{.overview{{grid-template-columns:1fr}}}}
-.ov-card{{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}}
-.ov-title{{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px}}
-.donut-wrap{{display:flex;gap:18px;align-items:center;flex-wrap:wrap}}
-.legend{{display:flex;flex-direction:column;gap:4px;min-width:130px}}
-.lg-row{{display:flex;align-items:center;gap:8px;font-size:12.5px}}
-.lg-dot{{width:10px;height:10px;border-radius:50%}}
+
+/* podsumowanie: donut + slupki */
+.overview{{display:grid;grid-template-columns:minmax(240px,1fr) minmax(260px,1.35fr);gap:16px}}
+@media(max-width:760px){{.overview{{grid-template-columns:1fr}}}}
+.ov-card{{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}}
+.ov-title{{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:14px;font-weight:600}}
+.donut-wrap{{display:flex;gap:20px;align-items:center;flex-wrap:wrap}}
+.legend{{display:flex;flex-direction:column;gap:6px;min-width:132px}}
+.lg-row{{display:flex;align-items:center;gap:9px;font-size:13px}}
+.lg-dot{{width:10px;height:10px;border-radius:50%;flex:none}}
 .lg-name{{flex:1;text-transform:capitalize;color:var(--muted)}}
 .lg-val{{font-weight:700}}
-.bars{{display:flex;flex-direction:column;gap:8px}}
-.barrow{{display:flex;align-items:center;gap:10px;font-size:12.5px}}
-.barlabel{{width:130px;flex:none;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
-.bartrack{{flex:1;height:12px;background:var(--panel2);border-radius:6px;overflow:hidden}}
+.bars{{display:flex;flex-direction:column;gap:9px}}
+.barrow{{display:flex;align-items:center;gap:12px;font-size:13px}}
+.barlabel{{width:132px;flex:none;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+.bartrack{{flex:1;height:10px;background:var(--surface-2);border-radius:6px;overflow:hidden}}
 .barfill{{display:block;height:100%;border-radius:6px}}
 .barval{{width:26px;text-align:right;font-weight:700}}
-.chip{{display:inline-block;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:4px 12px;margin:3px;font-size:12px}}
+
+/* rozpoznanie */
+.recon-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(262px,1fr));gap:14px}}
+.recon-card{{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}}
+.rc-h{{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:10px;font-weight:600}}
+.rc-count{{background:var(--surface-2);border:1px solid var(--line);border-radius:20px;padding:1px 9px;font-weight:700;color:var(--fg);font-size:11px}}
+.rc-items{{display:flex;flex-wrap:wrap;gap:6px;max-height:176px;overflow:auto}}
+.rchip{{background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:12px;
+   font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--fg)}}
+.rsvc{{width:100%;margin:2px 0;display:flex;flex-wrap:wrap;gap:6px;align-items:center}}
+.rsvc-l{{min-width:44px;color:var(--accent);font-weight:700;font-size:11px;text-transform:uppercase}}
+
+/* framework chips */
+.chip{{display:inline-block;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:5px 13px;margin:3px;font-size:12.5px}}
+.chip b{{color:var(--accent)}}
+
+/* tabele */
 table{{width:100%;border-collapse:collapse;font-size:13px}}
-table.grid{{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}}
-th,td{{padding:8px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}}
-th{{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase}}
-td.what{{color:var(--muted);font-size:12.5px;max-width:420px}}
-.center{{text-align:center}}
-.muted{{color:var(--muted)}}
-code{{background:#0009;padding:1px 5px;border-radius:4px;font-size:12px}}
-.badge{{color:#0f1419;font-weight:700;border-radius:5px;padding:1px 8px;font-size:11px;text-transform:uppercase}}
-.filters{{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}}
-.filters button{{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:20px;padding:5px 14px;cursor:pointer;font-size:12px}}
-.filters button.off{{opacity:.35}}
-.card{{background:var(--panel);border:1px solid var(--line);border-left-width:4px;border-radius:8px;margin:8px 0}}
-.card.sev-critical{{border-left-color:#e5484d}}.card.sev-high{{border-left-color:#f76808}}
-.card.sev-medium{{border-left-color:#f5d90a}}.card.sev-low{{border-left-color:#46a758}}.card.sev-info{{border-left-color:#5b9dd9}}
-.card-head{{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;flex-wrap:wrap}}
-.card-head .title{{flex:1;min-width:180px}}
+table.grid{{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}}
+th,td{{padding:10px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}}
+tbody tr:last-child td{{border-bottom:none}}
+th{{color:var(--muted);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;background:var(--surface-2)}}
+td.what{{color:var(--muted);font-size:12.5px;max-width:440px}}
+
+/* chip severity (spojny z aplikacja) */
+.scv{{display:inline-flex;align-items:center;gap:.35rem;padding:.16rem .58rem;border-radius:999px;font-size:.72rem;
+   font-weight:700;text-transform:uppercase;border:1px solid transparent;letter-spacing:.3px}}
+.scv .dot{{width:.5rem;height:.5rem;border-radius:50%;background:currentColor}}
+.sc-critical{{color:var(--sev-critical);background:rgba(239,68,68,.13);border-color:rgba(239,68,68,.4)}}
+.sc-high{{color:var(--sev-high);background:rgba(249,115,22,.13);border-color:rgba(249,115,22,.4)}}
+.sc-medium{{color:var(--sev-medium);background:rgba(234,179,8,.14);border-color:rgba(234,179,8,.4)}}
+.sc-low{{color:var(--sev-low);background:rgba(59,130,246,.13);border-color:rgba(59,130,246,.4)}}
+.sc-info{{color:var(--sev-info);background:rgba(100,116,139,.16);border-color:rgba(100,116,139,.4)}}
+
+/* filtry */
+.filters{{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 14px}}
+.filters button{{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:20px;padding:5px 15px;cursor:pointer;font-size:12px}}
+.filters button:hover{{border-color:var(--accent)}}
+.filters button.off{{opacity:.32}}
+
+/* karty znalezisk */
+.card{{background:var(--surface);border:1px solid var(--line);border-left-width:3px;border-radius:10px;margin:9px 0}}
+.card.sev-critical{{border-left-color:var(--sev-critical)}}.card.sev-high{{border-left-color:var(--sev-high)}}
+.card.sev-medium{{border-left-color:var(--sev-medium)}}.card.sev-low{{border-left-color:var(--sev-low)}}.card.sev-info{{border-left-color:var(--sev-info)}}
+.card-head{{display:flex;align-items:center;gap:11px;padding:12px 15px;cursor:pointer;flex-wrap:wrap}}
+.card-head .title{{flex:1;min-width:200px;font-weight:600}}
 .conf,.tool,.risk{{color:var(--muted);font-size:12px}}
-.tool{{background:#0006;padding:1px 7px;border-radius:4px}}
-.card-body{{display:none;padding:0 14px 14px;border-top:1px solid var(--line)}}
+.tool{{background:var(--surface-2);border:1px solid var(--line);padding:1px 8px;border-radius:5px}}
+.card-body{{display:none;padding:2px 15px 15px;border-top:1px solid var(--line)}}
 .card-body.open{{display:block}}
-.kv{{margin:10px 0}}
-pre{{background:#0009;padding:10px;border-radius:6px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:12px;margin:6px 0 0}}
-.ref,.ctrl{{display:inline-block;background:#0006;border:1px solid var(--line);border-radius:4px;padding:1px 7px;margin:2px;font-size:11px}}
+.kv{{margin:11px 0}}
+.kv b{{color:var(--muted);font-weight:600;font-size:12.5px}}
+pre{{background:var(--surface-2);border:1px solid var(--line);padding:11px;border-radius:8px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:12px;margin:6px 0 0;line-height:1.55}}
+.ref,.ctrl{{display:inline-block;background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:2px 8px;margin:2px;font-size:11px}}
 .ctrl{{color:var(--accent)}}
 .card.done .title{{text-decoration:line-through;opacity:.5}}
+.triage{{width:15px;height:15px;accent-color:var(--accent)}}
 details.ex{{margin:4px 0}}
-details.ex summary{{cursor:pointer;color:var(--accent);font-size:12px;user-select:none}}
-.ex-body{{white-space:pre-line;color:var(--muted);font-size:12.5px;margin:6px 0 2px;padding:8px 10px;background:#0006;border-radius:6px;border:1px solid var(--line)}}
-.recon-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:12px}}
-.recon-card{{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}}
-.rc-h{{display:flex;justify-content:space-between;align-items:center;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:8px}}
-.rc-count{{background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:0 9px;font-weight:700;color:var(--fg)}}
-.rc-items{{display:flex;flex-wrap:wrap;gap:5px;max-height:168px;overflow:auto}}
-.rchip{{background:#0006;border:1px solid var(--line);border-radius:5px;padding:2px 7px;font-size:11.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}}
-.rsvc{{width:100%;margin:2px 0;display:flex;flex-wrap:wrap;gap:5px;align-items:center}}
-.rsvc-l{{min-width:42px;color:var(--accent);font-weight:700;font-size:11px}}
-footer{{margin-top:32px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-top:12px}}
+details.ex summary{{cursor:pointer;color:var(--accent);font-size:12.5px;user-select:none;font-weight:600}}
+.ex-body{{white-space:pre-line;color:var(--fg);font-size:12.5px;margin:8px 0 2px;padding:10px 12px;background:var(--surface-2);border-radius:8px;border:1px solid var(--line);line-height:1.6}}
+footer{{margin-top:36px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-top:14px}}
 </style></head>
 <body><div class="wrap">
 <header>

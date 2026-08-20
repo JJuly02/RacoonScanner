@@ -64,7 +64,9 @@ class NmapAdapter(ToolAdapter):
             if ctx.options.get("ports"):
                 argv += ["-p", str(ctx.options["ports"])]
             argv.append(host)
-            self._exec(argv, timeout=ctx.options.get("timeout", 300))
+            # nmap drukuje czytelna tabele na stdout (jak w terminalu) i zapisuje XML
+            # do pliku (-oX). Parsujemy XML, ale w raporcie pokazujemy wyjscie terminalowe.
+            _, out = self._exec(argv, timeout=ctx.options.get("timeout", 300))
             xml = ""
             if os.path.exists(xml_path):
                 with open(xml_path, encoding="utf-8", errors="replace") as fh:
@@ -74,7 +76,7 @@ class NmapAdapter(ToolAdapter):
             for k, v in res.artifacts.items():
                 merged.artifacts.setdefault(k, [])
                 merged.artifacts[k] += v
-            merged.raw_files[f"nmap_{host}.xml"] = xml
+            merged.raw_files[f"nmap_{host}.txt"] = out or "(brak wyjscia nmap)"
         return merged
 
     def _parse(self, raw_xml: str, host: str) -> AdapterResult:

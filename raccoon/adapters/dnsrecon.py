@@ -1,4 +1,4 @@
-"""Adapter: dnsrecon — enumeracja DNS (parsuje wyjście JSON `-j`)."""
+"""Adapter: dnsrecon - enumeracja DNS (parsuje wyjście JSON `-j`)."""
 from __future__ import annotations
 
 import json
@@ -6,12 +6,14 @@ import os
 
 from ..findings import Confidence, Finding, Severity
 from ..netutil import host_of
+from ..modes import Intensity
 from .base import AdapterResult, RunContext, ToolAdapter
 
 
 class DnsreconAdapter(ToolAdapter):
     name = "dnsrecon"
     binary = "dnsrecon"
+    intensity = Intensity.ACTIVE
 
     def run(self, ctx: RunContext) -> AdapterResult:
         domain = host_of(ctx.target)
@@ -68,7 +70,7 @@ class DnsreconAdapter(ToolAdapter):
                     asset=name or domain,
                     tool="dnsrecon",
                     evidence=json.dumps(rec, ensure_ascii=False)[:400],
-                    recommendation="Wyłącz transfer strefy dla nieautoryzowanych hostów — ujawnia pełną mapę DNS.",
+                    recommendation="Wyłącz transfer strefy dla nieautoryzowanych hostów - ujawnia pełną mapę DNS.",
                     references=["CWE-200"],
                 ))
             elif rtype in ("NS", "MX", "SOA", "TXT", "SRV", "PTR"):
@@ -80,7 +82,7 @@ class DnsreconAdapter(ToolAdapter):
                     asset=name or domain,
                     tool="dnsrecon",
                     evidence=json.dumps(rec, ensure_ascii=False)[:300],
-                    recommendation="Element powierzchni ataku — uwzględnij w inwentarzu.",
+                    recommendation="Element powierzchni ataku - uwzględnij w inwentarzu.",
                 ))
 
         artifacts: dict = {}

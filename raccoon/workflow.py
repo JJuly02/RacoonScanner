@@ -1,7 +1,7 @@
 """Deklaratywne definicje workflow (pipeline'ów) recon.
 
 Workflow to nazwana sekwencja kroków (Stage). Każdy krok wskazuje adapter
-narzędzia, jego opcje oraz opcjonalny warunek `requires` — klucz, który musi
+narzędzia, jego opcje oraz opcjonalny warunek `requires` - klucz, który musi
 pojawić się we współdzielonym kontekście (artefaktach poprzednich kroków), żeby
 krok się wykonał. Dzięki temu np. whatweb odpala się tylko, gdy nmap znalazł
 `web_targets`.
@@ -22,6 +22,7 @@ class Stage:
     adapter: str
     options: dict = field(default_factory=dict)
     requires: str | None = None   # klucz w shared context wymagany do uruchomienia
+    intensity: str | None = None  # nadpisuje intensywność adaptera (passive/active/aggressive)
 
 
 @dataclass
@@ -38,6 +39,7 @@ class Workflow:
                 adapter=s["adapter"],
                 options=s.get("options", {}) or {},
                 requires=s.get("requires"),
+                intensity=s.get("intensity"),
             )
             for s in data.get("stages", [])
         ]

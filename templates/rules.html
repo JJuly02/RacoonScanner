@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Reguły zakresu - RacoonScanner{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0"><i class="bi bi-shield-check me-2 text-accent"></i>{{ t('rules.title') }}</h3>
+    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> {{ t('common.back_panel') }}</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-header"><i class="bi bi-list-check me-2"></i>{{ t('rules.allowlist_title') }}</div>
+            <div class="card-body">
+<p class="hint">{{ t('rules.allowlist_desc')|safe }}</p>
+                <form method="POST">
+                    <label class="form-label">{{ t('rules.entries') }} <span class="hint">{{ t('index.one_per_line') }}</span></label>
+                    <textarea class="form-control text-mono" name="allowlist" rows="12"
+                              placeholder="# jeden wpis na linię&#10;example.com&#10;*.example.com        # subdomeny&#10;203.0.113.10">{{ raw }}</textarea>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="hint">{{ active|length }} {{ t('rules.active_entries') }}</span>
+                        <button class="btn btn-accent" type="submit"><i class="bi bi-save"></i> {{ t('rules.save') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header"><i class="bi bi-info-circle me-2"></i>{{ t('rules.syntax') }}</div>
+            <div class="card-body small">
+                <ul class="mb-0">
+                    <li><code>example.com</code> - {{ t('rules.syntax_exact') }}</li>
+                    <li><code>*.example.com</code> - {{ t('rules.syntax_wild') }}</li>
+                    <li><code>203.0.113.10</code> - {{ t('rules.syntax_ip') }}</li>
+                    <li><code># tekst</code> - {{ t('rules.syntax_comment') }}</li>
+                </ul>
+            </div>
+        </div>
+        <div class="card shadow-sm">
+            <div class="card-header"><i class="bi bi-check2-circle me-2"></i>{{ t('rules.active') }}</div>
+            <ul class="list-group list-group-flush">
+                {% for e in active %}
+                    <li class="list-group-item text-mono small"><i class="bi bi-dot text-accent"></i>{{ e }}</li>
+                {% else %}
+                    <li class="list-group-item text-muted small">{{ t('rules.no_rules') }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -18,6 +18,14 @@ import shutil
 from datetime import datetime, timezone
 
 
+def _atomic_write(path: str, text: str) -> None:
+    """Zapis atomowy (tmp + os.replace) - czytelnik nigdy nie widzi pol-zapisu."""
+    tmp = f"{path}.tmp.{os.getpid()}.{secrets.token_hex(3)}"
+    with open(tmp, "w", encoding="utf-8") as fh:
+        fh.write(text)
+    os.replace(tmp, path)
+
+
 def safe_name(name: str) -> str:
     """Sanityzacja nazwy projektu (tylko alfanumeryczne, '_' i '-')."""
     return "".join(c for c in (name or "") if c.isalnum() or c in "_-").strip("-_")
@@ -81,19 +89,22 @@ class Store:
 
     # --- artefakty ---
     def save_meta(self, project: str, run_id: str, meta: dict) -> None:
-        with open(os.path.join(self.run_dir(project, run_id), "meta.json"), "w", encoding="utf-8") as fh:
-            json.dump(meta, fh, ensure_ascii=False, indent=2)
+        _atomic_write(os.path.join(self.run_dir(project, run_id), "meta.json"),
+                      json.dumps(meta, ensure_ascii=False, indent=2))
 
     def load_meta(self, project: str, run_id: str) -> dict | None:
         path = os.path.join(self.run_dir(project, run_id), "meta.json")
         if not os.path.exists(path):
             return None
-        with open(path, encoding="utf-8") as fh:
-            return json.load(fh)
+        try:
+            with open(path, encoding="utf-8") as fh:
+                return json.load(fh)
+        except (json.JSONDecodeError, OSError):
+            return None
 
     def save_findings(self, project: str, run_id: str, findings: list[dict]) -> None:
-        with open(os.path.join(self.run_dir(project, run_id), "findings.json"), "w", encoding="utf-8") as fh:
-            json.dump(findings, fh, ensure_ascii=False, indent=2)
+        _atomic_write(os.path.join(self.run_dir(project, run_id), "findings.json"),
+                      json.dumps(findings, ensure_ascii=False, indent=2))
 
     def load_findings(self, project: str, run_id: str) -> list[dict]:
         path = os.path.join(self.run_dir(project, run_id), "findings.json")
@@ -104,8 +115,7 @@ class Store:
 
     def save_report(self, project: str, run_id: str, html: str) -> str:
         path = os.path.join(self.run_dir(project, run_id), "report.html")
-        with open(path, "w", encoding="utf-8") as fh:
-            fh.write(html)
+        _atomic_write(path, html)
         return path
 
     def save_raw(self, project: str, run_id: str, filename: str, content: str) -> None:

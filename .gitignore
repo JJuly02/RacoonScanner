@@ -16,3 +16,18 @@ __pycache__/
 # Wewnętrzna roadmapa (lokalna, nie publikujemy)
 .INSTRUKCJE.md
 INSTRUKCJE.md
+
+# TASKS/ agent<->board protocol (AIraBoard): keep the dir, ignore task state
+TASKS/*.json
+!TASKS/.gitkeep
+
+# macOS
+.DS_Store
+
+# Moduł Shodan — nigdy nie commitujemy: klucz/env, cache i wyniki (dane klienta),
+# oraz lokalna lista celów (zakres pentestu).
+ShodanScaner/.venv/
+ShodanScaner/results/
+ShodanScaner/raw-*/
+ShodanScaner/dns-cache.json
+ShodanScaner/targets.txt

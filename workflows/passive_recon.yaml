@@ -1,0 +1,14 @@
+name: "Recon pasywny (OSINT)"
+description: >
+  W pełni pasywny recon — dane wyłącznie ze źródeł zewnętrznych (whois,
+  Certificate Transparency, Shodan/InternetDB). Zero pakietów do celu: otwarte
+  porty, subdomeny, dane rejestracyjne i znane CVE bez dotykania infrastruktury.
+stages:
+  - name: "WHOIS (rejestr domeny)"
+    adapter: whois
+  - name: "Certificate Transparency (crt.sh)"
+    adapter: crtsh
+  - name: "Shodan / InternetDB"
+    adapter: shodan
+    options:
+      api: auto

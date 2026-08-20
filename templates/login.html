@@ -3,25 +3,29 @@
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-4">
-    <div class="card shadow-sm mt-5">
-      <div class="card-header bg-white fw-bold">Logowanie</div>
+    <div class="text-center mt-5 mb-3">
+      <div style="font-size:2.4rem">🦝</div>
+      <h4 class="fw-bold mb-0">RacoonScanner</h4>
+      <div class="hint">{{ t('login.subtitle') }}</div>
+    </div>
+    <div class="card shadow-sm">
+      <div class="card-header"><i class="bi bi-shield-lock me-2 text-accent"></i>{{ t('login.title') }}</div>
       <div class="card-body">
         <form method="POST">
           <div class="mb-3">
-            <label class="form-label">Użytkownik</label>
+            <label class="form-label">{{ t('login.user') }}</label>
             <input type="text" class="form-control" name="user" value="admin" autofocus>
           </div>
           <div class="mb-3">
-            <label class="form-label">Hasło</label>
+            <label class="form-label">{{ t('login.password') }}</label>
             <input type="password" class="form-control" name="password" required>
           </div>
-          <button class="btn btn-dark w-100" type="submit">Zaloguj</button>
+          <button class="btn btn-accent w-100" type="submit"><i class="bi bi-box-arrow-in-right"></i> {{ t('login.submit') }}</button>
         </form>
       </div>
     </div>
-    <p class="text-muted small mt-3 text-center">
-      Hasło startowe generowane jest przy pierwszym uruchomieniu (patrz logi) lub
-      ustaw <code>RACOON_PASSWORD</code>.
+    <p class="hint mt-3 text-center">
+{{ t('login.hint') }} <code>RACOON_PASSWORD</code>.
     </p>
   </div>
 </div>

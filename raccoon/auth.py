@@ -1,6 +1,6 @@
 """Uwierzytelnianie, log audytowy i prosty rate limiting.
 
-Dashboard nie może być otwarty — uruchamianie skanów wymaga zalogowania.
+Dashboard nie może być otwarty - uruchamianie skanów wymaga zalogowania.
 Model jest jednoużytkownikowy: login i hash hasła trzymane w `private/`.
 Hasło pochodzi z env `RACOON_PASSWORD`; jeśli go nie ma, generujemy losowe
 i wypisujemy raz na starcie (do środowiska developerskiego).

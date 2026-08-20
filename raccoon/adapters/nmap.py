@@ -1,4 +1,4 @@
-"""Adapter: nmap — skan portów i wersji usług (parsuje wyjście XML `-oX`)."""
+"""Adapter: nmap - skan portów i wersji usług (parsuje wyjście XML `-oX`)."""
 from __future__ import annotations
 
 import os
@@ -6,27 +6,52 @@ import xml.etree.ElementTree as ET
 
 from ..findings import Confidence, Finding, Severity
 from ..netutil import host_of, is_web_port, web_url
+from ..modes import Intensity
 from .base import AdapterResult, RunContext, ToolAdapter
 
 # Usługi, których gołe wystawienie na świat traktujemy jako podwyższone ryzyko.
 _RISKY = {
-    "telnet": (Severity.HIGH, "Telnet przesyła dane (w tym hasła) otwartym tekstem — wyłącz na rzecz SSH."),
-    "ftp": (Severity.MEDIUM, "FTP bez TLS przesyła poświadczenia otwartym tekstem — rozważ SFTP/FTPS."),
-    "microsoft-ds": (Severity.MEDIUM, "SMB wystawiony na zewnątrz — ogranicz dostęp firewallem."),
-    "netbios-ssn": (Severity.MEDIUM, "NetBIOS/SMB wystawiony na zewnątrz — ogranicz dostęp."),
-    "rdp": (Severity.MEDIUM, "RDP wystawiony publicznie — użyj VPN/bastion i MFA."),
-    "ms-wbt-server": (Severity.MEDIUM, "RDP wystawiony publicznie — użyj VPN/bastion i MFA."),
-    "vnc": (Severity.HIGH, "VNC często bez silnej autentykacji — ogranicz dostęp."),
-    "mysql": (Severity.MEDIUM, "Baza danych dostępna z zewnątrz — ogranicz do zaufanych sieci."),
-    "postgresql": (Severity.MEDIUM, "Baza danych dostępna z zewnątrz — ogranicz do zaufanych sieci."),
-    "mongodb": (Severity.HIGH, "MongoDB wystawiony publicznie bywa nieuwierzytelniony — ogranicz dostęp."),
-    "redis": (Severity.HIGH, "Redis domyślnie bez auth — nie wystawiaj publicznie."),
+    "telnet": (Severity.HIGH, "Telnet przesyła dane (w tym hasła) otwartym tekstem - wyłącz na rzecz SSH."),
+    "ftp": (Severity.MEDIUM, "FTP bez TLS przesyła poświadczenia otwartym tekstem - rozważ SFTP/FTPS."),
+    "microsoft-ds": (Severity.MEDIUM, "SMB wystawiony na zewnątrz - ogranicz dostęp firewallem."),
+    "netbios-ssn": (Severity.MEDIUM, "NetBIOS/SMB wystawiony na zewnątrz - ogranicz dostęp."),
+    "rdp": (Severity.MEDIUM, "RDP wystawiony publicznie - użyj VPN/bastion i MFA."),
+    "ms-wbt-server": (Severity.MEDIUM, "RDP wystawiony publicznie - użyj VPN/bastion i MFA."),
+    "vnc": (Severity.HIGH, "VNC często bez silnej autentykacji - ogranicz dostęp."),
+    "mysql": (Severity.MEDIUM, "Baza danych dostępna z zewnątrz - ogranicz do zaufanych sieci."),
+    "postgresql": (Severity.MEDIUM, "Baza danych dostępna z zewnątrz - ogranicz do zaufanych sieci."),
+    "mongodb": (Severity.HIGH, "MongoDB wystawiony publicznie bywa nieuwierzytelniony - ogranicz dostęp."),
+    "redis": (Severity.HIGH, "Redis domyślnie bez auth - nie wystawiaj publicznie."),
 }
+
+
+# Mapowanie usługi/portu -> klucz artefaktu, który wyzwala dedykowany footprinting.
+def _service_target_keys(port: int, service: str) -> list[str]:
+    svc = (service or "").lower()
+    keys = []
+    if port in (445, 139) or "microsoft-ds" in svc or "netbios" in svc or "smb" in svc:
+        keys.append("smb_targets")
+    if port == 21 or "ftp" in svc:
+        keys.append("ftp_targets")
+    if port == 161 or "snmp" in svc:
+        keys.append("snmp_targets")
+    if port in (3306, 5432, 1433, 1521, 27017, 6379) or any(
+            d in svc for d in ("mysql", "postgres", "ms-sql", "mssql", "oracle", "mongod", "redis")):
+        keys.append("db_targets")
+    if port in (25, 110, 143, 465, 587, 993, 995) or any(
+            m in svc for m in ("smtp", "imap", "pop3")):
+        keys.append("mail_targets")
+    if port == 3389 or "rdp" in svc or "ms-wbt" in svc:
+        keys.append("rdp_targets")
+    if port == 22 or "ssh" in svc:
+        keys.append("ssh_targets")
+    return keys
 
 
 class NmapAdapter(ToolAdapter):
     name = "nmap"
     binary = "nmap"
+    intensity = Intensity.ACTIVE
 
     def run(self, ctx: RunContext) -> AdapterResult:
         hosts = ctx.shared.get("hosts") or [host_of(ctx.target)]
@@ -56,6 +81,7 @@ class NmapAdapter(ToolAdapter):
         findings: list[Finding] = []
         open_ports: list[dict] = []
         web_targets: list[str] = []
+        service_targets: dict[str, list[str]] = {}
         if not raw_xml.strip():
             return AdapterResult()
         try:
@@ -63,7 +89,7 @@ class NmapAdapter(ToolAdapter):
         except ET.ParseError:
             return AdapterResult()
         for host_el in root.findall("host"):
-            # Preferuj adres IP (ipv4/ipv6) — nmap potrafi podać też <address addrtype="mac">.
+            # Preferuj adres IP (ipv4/ipv6) - nmap potrafi podać też <address addrtype="mac">.
             addr = host
             ip_addrs = [a for a in host_el.findall("address")
                         if a.get("addrtype") in ("ipv4", "ipv6")]
@@ -106,14 +132,18 @@ class NmapAdapter(ToolAdapter):
                         asset=f"{addr}:{portid}",
                         tool="nmap",
                         evidence=banner,
-                        recommendation="Ujawniona wersja ułatwia dobranie exploita — rozważ ukrycie bannera i aktualizację.",
+                        recommendation="Ujawniona wersja ułatwia dobranie exploita - rozważ ukrycie bannera i aktualizację.",
                         references=["CWE-200"],
                     ))
                 if is_web_port(portid, svc):
                     web_targets.append(web_url(addr, portid, svc))
+                for key in _service_target_keys(portid, svc):
+                    service_targets.setdefault(key, []).append(addr)
         artifacts: dict = {}
         if open_ports:
             artifacts["open_ports"] = open_ports
         if web_targets:
             artifacts["web_targets"] = list(dict.fromkeys(web_targets))
+        for key, hosts in service_targets.items():
+            artifacts[key] = list(dict.fromkeys(hosts))
         return AdapterResult(findings=findings, artifacts=artifacts)

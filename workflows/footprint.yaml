@@ -1,18 +1,19 @@
-name: "Full Recon"
+name: "Footprinting (pełny recon)"
 description: >
-  Pełny łańcuch pierwszej fazy pentestu: discovery (DNS + ICMP) → skan portów i
-  usług → fingerprint web → wykrywanie SQLi/LFI/RFI. Każdy krok karmi kolejny.
+  Rozpoznanie od domeny/IP: WHOIS + Certificate Transparency + DNS + Shodan →
+  discovery → skan portów i usług → enumeracja per-usługa (SMB null session) →
+  fingerprint web. Każdy krok karmi kolejny (nmap taguje usługi do footprintu).
 stages:
   - name: "WHOIS (rejestr domeny)"
     adapter: whois
   - name: "Certificate Transparency (crt.sh)"
     adapter: crtsh
+  - name: "DNS enumeration"
+    adapter: dnsrecon
   - name: "Passive recon (Shodan)"
     adapter: shodan
     options:
       api: auto
-  - name: "DNS enumeration"
-    adapter: dnsrecon
   - name: "Host discovery (ICMP)"
     adapter: ping
   - name: "Skan portów i usług"
@@ -25,12 +26,3 @@ stages:
   - name: "Fingerprint web"
     adapter: whatweb
     requires: web_targets
-  - name: "SQL injection"
-    adapter: sqlmap
-    requires: web_targets
-  - name: "LFI / RFI (INCLUDED)"
-    adapter: included
-    requires: web_targets
-    options:
-      profile: all
-      param: page

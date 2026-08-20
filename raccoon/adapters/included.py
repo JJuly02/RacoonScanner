@@ -1,6 +1,6 @@
-"""Adapter: INCLUDED — skaner LFI/RFI (parsuje `-of json`).
+"""Adapter: INCLUDED - skaner LFI/RFI (parsuje `-of json`).
 
-https://github.com/JJuly02/INCLUDED — CLI zwraca listę potwierdzonych znalezisk
+https://github.com/JJuly02/INCLUDED - CLI zwraca listę potwierdzonych znalezisk
 `{module, signal, payload, status, length, evidence}`. INCLUDED weryfikuje każde
 trafienie ponownym żądaniem, więc pewność mapujemy na HIGH.
 """
@@ -10,6 +10,7 @@ import json
 import os
 
 from ..findings import Confidence, Finding, Severity
+from ..modes import Intensity
 from .base import AdapterResult, RunContext, ToolAdapter
 
 # Moduły RCE (wykonanie kodu) vs. read (odczyt plików).
@@ -19,6 +20,7 @@ _RCE_MODULES = {"data", "input", "expect", "zip_phar", "log_poison", "filter_cha
 class IncludedAdapter(ToolAdapter):
     name = "included"
     binary = "included"
+    intensity = Intensity.AGGRESSIVE
 
     def run(self, ctx: RunContext) -> AdapterResult:
         param = ctx.options.get("param", "page")
@@ -66,7 +68,7 @@ class IncludedAdapter(ToolAdapter):
                 evidence=f"[{module}] {rec.get('signal', '')} :: {rec.get('payload', '')}\n"
                          f"HTTP {rec.get('status', '?')} ({rec.get('length', '?')}B)\n"
                          f"{str(rec.get('evidence', ''))[:400]}",
-                recommendation="Nie przekazuj wejścia użytkownika do include/require — użyj białej listy plików. "
+                recommendation="Nie przekazuj wejścia użytkownika do include/require - użyj białej listy plików. "
                                "Wyłącz allow_url_include i ogranicz open_basedir.",
                 references=["CWE-98", "CWE-22", "OWASP-A03"],
             ))

@@ -1,30 +1,199 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="pl" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}RacoonScanner{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+    <script>
+      // Ustaw motyw zanim strona się wyrenderuje (bez „mignięcia" jasnego tła).
+      (function () {
+        var t = localStorage.getItem('racoon-theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', t);
+      })();
+    </script>
+    <style>
+      :root {
+        --rc-accent: #f59e0b;
+        --rc-accent-rgb: 245, 158, 11;
+        --sev-critical: #ef4444;
+        --sev-high: #f97316;
+        --sev-medium: #eab308;
+        --sev-low: #3b82f6;
+        --sev-info: #64748b;
+      }
+      /* --- Motyw ciemny (domyślny) --- */
+      [data-bs-theme="dark"] {
+        --bs-body-bg: #0e1116;
+        --bs-body-color: #e6e8eb;
+        --rc-surface: #171b22;
+        --rc-surface-2: #1e232c;
+        --rc-border: #2a303b;
+        --rc-muted: #9aa4b2;
+        --bs-border-color: var(--rc-border);
+      }
+      /* --- Motyw jasny --- */
+      [data-bs-theme="light"] {
+        --rc-surface: #ffffff;
+        --rc-surface-2: #f5f6f8;
+        --rc-border: #e2e5ea;
+        --rc-muted: #64748b;
+      }
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow-sm">
+      body {
+        background:
+          radial-gradient(1200px 600px at 100% -10%, rgba(var(--rc-accent-rgb), .06), transparent 60%),
+          var(--bs-body-bg);
+        min-height: 100vh;
+      }
+      [data-bs-theme="dark"] body { background-attachment: fixed; }
+
+      .navbar.rc-nav {
+        background: var(--rc-surface) !important;
+        border-bottom: 1px solid var(--rc-border);
+        backdrop-filter: blur(6px);
+      }
+      .navbar-brand { letter-spacing: .3px; }
+      .navbar .nav-link.active { color: var(--rc-accent) !important; }
+
+      .card {
+        background-color: var(--rc-surface);
+        border: 1px solid var(--rc-border);
+        border-radius: .7rem;
+      }
+      .card-header {
+        background-color: transparent;
+        border-bottom: 1px solid var(--rc-border);
+        font-weight: 600;
+      }
+      .list-group-item { background-color: transparent; border-color: var(--rc-border); }
+      .table { --bs-table-bg: transparent; --bs-table-border-color: var(--rc-border); }
+      .form-control, .form-select {
+        background-color: var(--rc-surface-2);
+        border-color: var(--rc-border);
+      }
+      .form-control:focus, .form-select:focus {
+        background-color: var(--rc-surface-2);
+        border-color: var(--rc-accent);
+        box-shadow: 0 0 0 .2rem rgba(var(--rc-accent-rgb), .18);
+      }
+      code, .text-mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace; }
+      .text-muted, .form-text { color: var(--rc-muted) !important; }
+
+      /* Akcent */
+      .btn-accent {
+        --bs-btn-bg: var(--rc-accent); --bs-btn-border-color: var(--rc-accent);
+        --bs-btn-hover-bg: #d98a06; --bs-btn-hover-border-color: #d98a06;
+        --bs-btn-active-bg: #c47e05; --bs-btn-color: #1a1205; --bs-btn-hover-color: #1a1205;
+        --bs-btn-active-color: #1a1205; font-weight: 600;
+      }
+      a { color: var(--rc-accent); text-decoration: none; }
+      a:hover { color: #ffb733; }
+      .text-accent { color: var(--rc-accent) !important; }
+
+      /* Chipy severity */
+      .sev-chip {
+        display: inline-flex; align-items: center; gap: .35rem;
+        padding: .12rem .5rem; border-radius: 999px; font-size: .74rem; font-weight: 600;
+        border: 1px solid transparent; line-height: 1.4;
+      }
+      .sev-chip .dot { width: .5rem; height: .5rem; border-radius: 50%; background: currentColor; }
+      .sev-critical { color: var(--sev-critical); background: rgba(239,68,68,.12);  border-color: rgba(239,68,68,.35); }
+      .sev-high     { color: var(--sev-high);     background: rgba(249,115,22,.12); border-color: rgba(249,115,22,.35); }
+      .sev-medium   { color: var(--sev-medium);   background: rgba(234,179,8,.12);  border-color: rgba(234,179,8,.35); }
+      .sev-low      { color: var(--sev-low);      background: rgba(59,130,246,.12); border-color: rgba(59,130,246,.35); }
+      .sev-info     { color: var(--sev-info);     background: rgba(100,116,139,.14);border-color: rgba(100,116,139,.35); }
+
+      /* Kropka statusu kroku */
+      .status-dot { width: .6rem; height: .6rem; border-radius: 50%; display: inline-block; }
+      .st-done { background: #22c55e; } .st-running { background: var(--rc-accent); animation: pulse 1s infinite; }
+      .st-error { background: var(--sev-critical); } .st-skipped { background: #475569; }
+      .st-cancelled { background: var(--sev-high); }
+      .st-unavailable { background: var(--sev-medium); } .st-pending, .st-queued { background: #334155; }
+      @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+      .stat-tile {
+        background: var(--rc-surface-2); border: 1px solid var(--rc-border);
+        border-radius: .6rem; padding: .8rem 1rem;
+      }
+      .stat-tile .num { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+      .stat-tile .lbl { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--rc-muted); }
+      .theme-toggle { border-color: var(--rc-border); }
+      .hint { font-size: .8rem; color: var(--rc-muted); }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg rc-nav mb-4 sticky-top">
         <div class="container">
             <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">🦝 RacoonScanner</a>
             {% if session.get('user') %}
-            <div class="ms-auto text-white-50 small">
-                {{ session['user'] }} · <a class="link-light" href="{{ url_for('logout') }}">wyloguj</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navmenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navmenu">
+                <ul class="navbar-nav me-auto ms-lg-4">
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'index' }}" href="{{ url_for('index') }}">
+                            <i class="bi bi-grid-1x2 me-1"></i>{{ t('nav.panel') }}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'rules' }}" href="{{ url_for('rules') }}">
+                            <i class="bi bi-shield-check me-1"></i>{{ t('nav.rules') }}
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary theme-toggle dropdown-toggle" type="button"
+                                data-bs-toggle="dropdown" title="{{ t('nav.lang') }}">
+                            <i class="bi bi-translate"></i> {{ current_lang|upper }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            {% for code, name in langs.items() %}
+                            <li><a class="dropdown-item {{ 'active' if code == current_lang }}"
+                                   href="{{ url_for('set_lang', code=code) }}">{{ name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <button id="themeToggle" class="btn btn-sm btn-outline-secondary theme-toggle" title="{{ t('nav.theme') }}" type="button">
+                        <i class="bi bi-moon-stars"></i>
+                    </button>
+                    <span class="hint">
+                        <i class="bi bi-person-circle me-1"></i>{{ session['user'] }} ·
+                        <a href="{{ url_for('logout') }}">{{ t('nav.logout') }}</a>
+                    </span>
+                </div>
+            </div>
+            {% else %}
+            <div class="ms-auto d-flex align-items-center gap-2">
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary theme-toggle dropdown-toggle" type="button"
+                            data-bs-toggle="dropdown" title="{{ t('nav.lang') }}">
+                        <i class="bi bi-translate"></i> {{ current_lang|upper }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        {% for code, name in langs.items() %}
+                        <li><a class="dropdown-item {{ 'active' if code == current_lang }}"
+                               href="{{ url_for('set_lang', code=code) }}">{{ name }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <button id="themeToggle" class="btn btn-sm btn-outline-secondary theme-toggle" title="{{ t('nav.theme') }}" type="button">
+                    <i class="bi bi-moon-stars"></i>
+                </button>
             </div>
             {% endif %}
         </div>
     </nav>
 
-    <div class="container">
+    <div class="container pb-5">
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
-              <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+              <div class="alert alert-{{ 'danger' if category == 'error' else ('warning' if category == 'warning' else 'success') }} alert-dismissible fade show">
                   {{ message }}
                   <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
               </div>
@@ -36,6 +205,23 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      (function () {
+        var btn = document.getElementById('themeToggle');
+        function icon() {
+          var dark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+          if (btn) btn.innerHTML = dark ? '<i class="bi bi-moon-stars"></i>' : '<i class="bi bi-brightness-high"></i>';
+        }
+        icon();
+        if (btn) btn.addEventListener('click', function () {
+          var cur = document.documentElement.getAttribute('data-bs-theme');
+          var next = cur === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-bs-theme', next);
+          localStorage.setItem('racoon-theme', next);
+          icon();
+        });
+      })();
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

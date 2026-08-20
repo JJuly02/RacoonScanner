@@ -112,7 +112,9 @@ _CAT: dict[str, dict[str, str]] = {
     # --- raport (nagłówki) ---
     "report.title": {"pl": "raport skanowania", "en": "scan report"},
     "report.generated": {"pl": "Wygenerowano", "en": "Generated"},
-    "report.fw_coverage": {"pl": "Zgodność - pokrycie frameworków", "en": "Compliance - framework coverage"},
+    "report.fw_coverage": {"pl": "Zgodność - pokrycie standardów", "en": "Compliance - standards coverage"},
+    "report.fw_coverage_note": {"pl": "Ile wymogów (kontroli) z każdego standardu bezpieczeństwa dotyczą wykryte znaleziska. NIS2 i UKSC to regulacje (UE / Polska), ISO/IEC 27001 to norma zarządzania bezpieczeństwem, DORA dotyczy sektora finansowego. Wyższe liczby = więcej obszarów zgodności dotkniętych problemami.",
+                                "en": "How many requirements (controls) from each security standard the findings touch. NIS2 and UKSC are regulations (EU / Poland), ISO/IEC 27001 is a management standard, DORA applies to the financial sector. Higher numbers = more compliance areas affected."},
     "report.controls_of": {"pl": "kontroli", "en": "controls"},
     "report.no_fw": {"pl": "brak trafień", "en": "no matches"},
     "report.matrix": {"pl": "Macierz zgodności", "en": "Compliance matrix"},
@@ -148,8 +150,8 @@ _CAT: dict[str, dict[str, str]] = {
                                  "czym jest dany port i co zwykle na nim działa.",
                            "en": "Discovered hosts, ports and services. The \"What it is\" column explains "
                                  "what each port is and what typically runs on it."},
-    "report.matrix_note": {"pl": "Które wymogi regulacyjne dotykają znaleziska (mapowanie poglądowe).",
-                           "en": "Which regulatory requirements the findings touch (advisory mapping)."},
+    "report.matrix_note": {"pl": "Każdy wiersz to konkretny wymóg (kontrola) danego standardu, którego dotyczą znaleziska - z liczbą trafień i najwyższą wagą (severity). Pomaga wskazać, na czym skupić działania naprawcze pod audyt. Mapowanie jest poglądowe, nie stanowi interpretacji prawnej.",
+                           "en": "Each row is a specific requirement (control) of a standard that the findings touch - with hit count and the highest severity. It helps prioritise remediation for an audit. The mapping is advisory, not a legal interpretation."},
     "report.no_assets": {"pl": "Brak zasobów.", "en": "No assets."},
     "report.recon": {"pl": "Rozpoznanie (footprinting)", "en": "Reconnaissance (footprinting)"},
     "report.recon_note": {"pl": "Pelny zbior danych zebranych w fazie rozpoznania - takze wtedy, "
@@ -165,8 +167,8 @@ _CAT: dict[str, dict[str, str]] = {
     "recon.open_ports": {"pl": "Otwarte porty", "en": "Open ports"},
     "recon.services": {"pl": "Wykryte uslugi do enumeracji", "en": "Services detected for enumeration"},
     "report.tools": {"pl": "Uruchomione narzedzia i skrypty", "en": "Tools and scripts executed"},
-    "report.tools_note": {"pl": "Kroki pipeline, ktore sie wykonaly. Rozwin kafelek, aby zobaczyc surowe wyjscie narzedzia (podglad terminala).",
-                          "en": "Pipeline steps that ran. Expand a tile to see the tool\u0027s raw output (terminal preview)."},
+    "report.tools_note": {"pl": "Kroki pipeline, ktore sie wykonaly. Kliknij kafelek, aby zobaczyc log narzedzia (podglad terminala) ponizej.",
+                          "en": "Pipeline steps that ran. Expand a tile to see the tool\u0027s raw output below."},
     "report.tool_noraw": {"pl": "Brak zapisanego wyjscia dla tego kroku.", "en": "No saved output for this step."},
     "report.tool_truncated": {"pl": "... (obciete)", "en": "... (truncated)"},
     "report.of_total": {"pl": "z", "en": "of"},

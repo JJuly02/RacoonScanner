@@ -111,6 +111,7 @@ def generate(findings: list[Finding], meta: dict, lang: str = "pl", raw_dir: str
         L_recon=L("report.recon"),
         L_tools=L("report.tools"),
         L_fw_coverage=L("report.fw_coverage"),
+        L_fw_coverage_note=L("report.fw_coverage_note"),
         L_matrix=L("report.matrix"),
         L_matrix_note=L("report.matrix_note"),
         L_col_control=L("report.col_control"),
@@ -158,7 +159,8 @@ def _tools_section(stages, raw_dir, L) -> str:
     if not stages:
         return ""
     tiles = ""
-    for st in stages:
+    panels = ""
+    for i, st in enumerate(stages):
         adapter = str(st.get("adapter", ""))
         status = str(st.get("status", ""))
         n = st.get("findings", 0) or 0
@@ -172,19 +174,25 @@ def _tools_section(stages, raw_dir, L) -> str:
         loaded = _read_raws(raw_dir, st.get("raw_files"), L)
         for fn, content in loaded:
             body += f'<div class="log-h">{html.escape(fn)}</div><pre class="log">{html.escape(content)}</pre>'
-        if not loaded and status == "done" and not note:
+        if not loaded and not note:
             body += f'<div class="t-note muted">{L("report.tool_noraw")}</div>'
         count = f'<span class="t-count">{n}</span>' if n else ""
         tiles += (
-            f'<details class="tool"><summary>'
+            f'<button type="button" class="tool-tile" data-i="{i}" onclick="showTool({i})">'
             f'<span class="tdot ts-{status}"></span>'
             f'<span class="t-name">{html.escape(adapter)}</span>'
-            f'<span class="t-status">{html.escape(status)}</span>{count}</summary>'
-            f'<div class="t-body">{body or "<div class=\'t-note muted\'>-</div>"}</div></details>'
+            f'<span class="t-status">{html.escape(status)}</span>{count}</button>'
+        )
+        panels += (
+            f'<div class="tpanel" id="tpanel-{i}" hidden>'
+            f'<div class="tp-head">{html.escape(adapter)}'
+            f'{f" &middot; {html.escape(name)}" if name and name.lower() != adapter.lower() else ""}</div>'
+            f'{body or "<div class=\'t-note muted\'>-</div>"}</div>'
         )
     return (f'<div class="tools-head">{html.escape(L("report.tools"))}</div>'
             f'<p class="section-note">{html.escape(L("report.tools_note"))}</p>'
-            f'<div class="tools-grid">{tiles}</div>')
+            f'<div class="tools-grid">{tiles}</div>'
+            f'<div class="tool-detail">{panels}</div>')
 
 
 _RECON_LABELS = [
@@ -489,12 +497,13 @@ details.ex{{margin:4px 0}}
 details.ex summary{{cursor:pointer;color:var(--accent);font-size:12.5px;user-select:none;font-weight:600}}
 .ex-body{{white-space:pre-line;color:var(--fg);font-size:12.5px;margin:8px 0 2px;padding:10px 12px;background:var(--surface-2);border-radius:8px;border:1px solid var(--line);line-height:1.6}}
 .tools-head{{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:700;margin:2px 0 6px}}
-.tools-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(202px,1fr));gap:10px;margin-bottom:22px}}
-details.tool{{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}}
-details.tool[open]{{grid-column:1/-1}}
-.tool>summary{{list-style:none;cursor:pointer;padding:11px 13px;display:flex;align-items:center;gap:9px;font-size:13px}}
-.tool>summary::-webkit-details-marker{{display:none}}
-.tool>summary::marker{{content:""}}
+.tools-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:10px;margin-bottom:6px}}
+.tool-tile{{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:13px;color:var(--fg);cursor:pointer;font-family:inherit}}
+.tool-tile:hover{{border-color:var(--accent)}}
+.tool-tile.active{{border-color:var(--accent);box-shadow:0 0 0 1px rgba(var(--accent-rgb),.45)}}
+.tool-detail{{margin-bottom:22px}}
+.tpanel{{background:var(--surface);border:1px solid rgba(var(--accent-rgb),.45);border-radius:12px;padding:14px 16px;margin-top:6px}}
+.tp-head{{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700;color:var(--accent);font-size:13px;margin-bottom:6px}}
 .tdot{{width:9px;height:9px;border-radius:50%;flex:none}}
 .ts-done{{background:#22c55e}}.ts-skipped{{background:#475569}}.ts-unavailable{{background:var(--sev-medium)}}
 .ts-error{{background:var(--sev-critical)}}.ts-running{{background:var(--accent)}}.ts-pending,.ts-queued{{background:#334155}}
@@ -538,6 +547,7 @@ footer{{margin-top:36px;color:var(--muted);font-size:12px;border-top:1px solid v
 {assets}
 
 <h2>{L_fw_coverage}</h2>
+<p class="section-note">{L_fw_coverage_note}</p>
 <div>{fw_chips}</div>
 
 <h2>{L_matrix}</h2>
@@ -560,6 +570,15 @@ footer{{margin-top:36px;color:var(--muted);font-size:12px;border-top:1px solid v
 <script>
 var RUN = "{run_id}";
 function toggle(id){{document.getElementById('body-'+id).classList.toggle('open');}}
+function showTool(i){{
+  var panel=document.getElementById('tpanel-'+i);
+  var tile=document.querySelector('.tool-tile[data-i="'+i+'"]');
+  if(!panel) return;
+  var wasOpen=!panel.hidden;
+  document.querySelectorAll('.tpanel').forEach(function(p){{p.hidden=true;}});
+  document.querySelectorAll('.tool-tile').forEach(function(t){{t.classList.remove('active');}});
+  if(!wasOpen){{ panel.hidden=false; if(tile) tile.classList.add('active'); }}
+}}
 function triage(cb){{
   var card=cb.closest('.card'); card.classList.toggle('done',cb.checked);
   var key='racoon-triage-'+RUN; var s=JSON.parse(localStorage.getItem(key)||'{{}}');

@@ -6,6 +6,7 @@ dostępny na żywo (polling) i utrwalany na dysku po każdym kroku.
 """
 from __future__ import annotations
 
+import os
 import threading
 import traceback
 from dataclasses import dataclass, field
@@ -67,10 +68,12 @@ class StageState:
     findings: int = 0
     error: str = ""
     note: str = ""            # np. powód pominięcia (poza trybem / brak zależności)
+    raw_files: list = field(default_factory=list)   # nazwy surowych wyjść narzędzia
 
     def to_dict(self) -> dict:
         return {"name": self.name, "adapter": self.adapter, "status": self.status,
-                "findings": self.findings, "error": self.error, "note": self.note}
+                "findings": self.findings, "error": self.error, "note": self.note,
+                "raw_files": list(self.raw_files)}
 
 
 @dataclass
@@ -259,6 +262,7 @@ class Runner:
                 self._merge(shared, res.artifacts)
                 for fn, content in res.raw_files.items():
                     self.store.save_raw(state.project, state.run_id, fn, content)
+                ss.raw_files = [os.path.basename(fn) for fn in res.raw_files]
                 ss.findings = len(res.findings)
                 ss.status = "done"
                 state.log.append(f"[+] {ss.name}: {ss.findings} znalezisk")
@@ -282,7 +286,8 @@ class Runner:
         state.status = status
         state.finished = _now()
         self.store.save_findings(state.project, state.run_id, [f.to_dict() for f in findings])
-        html = report.generate(findings, meta=state.meta_dict())
+        raw_dir = self.store.run_dir(state.project, state.run_id) + "/raw"
+        html = report.generate(findings, meta=state.meta_dict(), raw_dir=raw_dir)
         self.store.save_report(state.project, state.run_id, html)
         self._persist(state)
 

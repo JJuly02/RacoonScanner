@@ -12,6 +12,7 @@ from __future__ import annotations
 import html
 import json
 import math
+import os
 from collections import Counter
 from datetime import datetime, timezone
 
@@ -38,7 +39,7 @@ def export_json(findings: list[Finding], meta: dict) -> str:
     )
 
 
-def generate(findings: list[Finding], meta: dict, lang: str = "pl") -> str:
+def generate(findings: list[Finding], meta: dict, lang: str = "pl", raw_dir: str | None = None) -> str:
     lang = i18n.normalize(lang)
 
     def L(key: str) -> str:
@@ -61,6 +62,7 @@ def generate(findings: list[Finding], meta: dict, lang: str = "pl") -> str:
     donut = _severity_donut(risk["counts"], risk["total"], L)
     cat_bars = _category_bars(findings)
     recon_html = _recon_section(meta.get("recon") or {}, findings, L)
+    tools_html = _tools_section(meta.get("stages") or [], raw_dir, L)
 
     fw_chips = "".join(
         f'<span class="chip">{html.escape(k)}: <b>{v}</b> {L("report.controls_of")}</span>'
@@ -88,6 +90,7 @@ def generate(findings: list[Finding], meta: dict, lang: str = "pl") -> str:
         donut=donut,
         cat_bars=cat_bars,
         recon=recon_html,
+        tools=tools_html,
         fw_chips=fw_chips,
         matrix_rows=matrix_rows,
         assets=assets,
@@ -106,6 +109,7 @@ def generate(findings: list[Finding], meta: dict, lang: str = "pl") -> str:
         L_sev_distribution=L("report.sev_distribution"),
         L_by_category=L("report.by_category"),
         L_recon=L("report.recon"),
+        L_tools=L("report.tools"),
         L_fw_coverage=L("report.fw_coverage"),
         L_matrix=L("report.matrix"),
         L_matrix_note=L("report.matrix_note"),
@@ -130,6 +134,57 @@ def _color_for_rank(rank: int) -> str:
 
 def _name_for_rank(rank: int) -> str:
     return {4: "critical", 3: "high", 2: "medium", 1: "low", 0: "info"}[rank]
+
+
+def _read_raws(raw_dir, names, L, cap: int = 16000):
+    out = []
+    if not raw_dir:
+        return out
+    for name in names or []:
+        path = os.path.join(raw_dir, os.path.basename(str(name)))
+        try:
+            with open(path, encoding="utf-8", errors="replace") as fh:
+                c = fh.read(cap + 1)
+        except OSError:
+            continue
+        if len(c) > cap:
+            c = c[:cap] + "\n" + L("report.tool_truncated")
+        if c.strip():
+            out.append((os.path.basename(str(name)), c))
+    return out
+
+
+def _tools_section(stages, raw_dir, L) -> str:
+    if not stages:
+        return ""
+    tiles = ""
+    for st in stages:
+        adapter = str(st.get("adapter", ""))
+        status = str(st.get("status", ""))
+        n = st.get("findings", 0) or 0
+        note = st.get("note") or st.get("error") or ""
+        name = str(st.get("name", ""))
+        body = ""
+        if name and name.lower() != adapter.lower():
+            body += f'<div class="t-info">{html.escape(name)}</div>'
+        if note:
+            body += f'<div class="t-note">{html.escape(str(note))}</div>'
+        loaded = _read_raws(raw_dir, st.get("raw_files"), L)
+        for fn, content in loaded:
+            body += f'<div class="log-h">{html.escape(fn)}</div><pre class="log">{html.escape(content)}</pre>'
+        if not loaded and status == "done" and not note:
+            body += f'<div class="t-note muted">{L("report.tool_noraw")}</div>'
+        count = f'<span class="t-count">{n}</span>' if n else ""
+        tiles += (
+            f'<details class="tool"><summary>'
+            f'<span class="tdot ts-{status}"></span>'
+            f'<span class="t-name">{html.escape(adapter)}</span>'
+            f'<span class="t-status">{html.escape(status)}</span>{count}</summary>'
+            f'<div class="t-body">{body or "<div class=\'t-note muted\'>-</div>"}</div></details>'
+        )
+    return (f'<div class="tools-head">{html.escape(L("report.tools"))}</div>'
+            f'<p class="section-note">{html.escape(L("report.tools_note"))}</p>'
+            f'<div class="tools-grid">{tiles}</div>')
 
 
 _RECON_LABELS = [
@@ -433,6 +488,23 @@ pre{{background:var(--surface-2);border:1px solid var(--line);padding:11px;borde
 details.ex{{margin:4px 0}}
 details.ex summary{{cursor:pointer;color:var(--accent);font-size:12.5px;user-select:none;font-weight:600}}
 .ex-body{{white-space:pre-line;color:var(--fg);font-size:12.5px;margin:8px 0 2px;padding:10px 12px;background:var(--surface-2);border-radius:8px;border:1px solid var(--line);line-height:1.6}}
+.tools-head{{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:700;margin:2px 0 6px}}
+.tools-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(202px,1fr));gap:10px;margin-bottom:22px}}
+details.tool{{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}}
+details.tool[open]{{grid-column:1/-1}}
+.tool>summary{{list-style:none;cursor:pointer;padding:11px 13px;display:flex;align-items:center;gap:9px;font-size:13px}}
+.tool>summary::-webkit-details-marker{{display:none}}
+.tool>summary::marker{{content:""}}
+.tdot{{width:9px;height:9px;border-radius:50%;flex:none}}
+.ts-done{{background:#22c55e}}.ts-skipped{{background:#475569}}.ts-unavailable{{background:var(--sev-medium)}}
+.ts-error{{background:var(--sev-critical)}}.ts-running{{background:var(--accent)}}.ts-pending,.ts-queued{{background:#334155}}
+.t-name{{flex:1;font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}}
+.t-status{{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.3px}}
+.t-count{{background:var(--surface-2);border:1px solid var(--line);border-radius:20px;padding:0 8px;font-size:11px;font-weight:700}}
+.t-body{{padding:2px 13px 13px;border-top:1px solid var(--line)}}
+.t-info,.t-note{{color:var(--muted);font-size:12.5px;margin:9px 0}}
+.log-h{{font-size:11px;color:var(--accent);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;margin:12px 0 4px}}
+pre.log{{background:#0b0e13;border:1px solid var(--line);color:#cbd5e1;padding:11px;border-radius:8px;overflow:auto;max-height:340px;white-space:pre;font-size:11.5px;line-height:1.5;margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}}
 footer{{margin-top:36px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-top:14px}}
 </style></head>
 <body><div class="wrap">
@@ -459,6 +531,7 @@ footer{{margin-top:36px;color:var(--muted);font-size:12px;border-top:1px solid v
 </div>
 
 <h2>{L_recon}</h2>
+{tools}
 {recon}
 
 <h2>{L_assets}</h2>

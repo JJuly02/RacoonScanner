@@ -241,7 +241,8 @@ def run_report(project, run_id):
     from raccoon import report
     findings = [Finding.from_dict(d) for d in rows]
     lang = i18n.normalize(session.get("lang"))
-    return report.generate(findings, meta, lang=lang)
+    raw_dir = os.path.join(store.run_dir(project, run_id), "raw")
+    return report.generate(findings, meta, lang=lang, raw_dir=raw_dir)
 
 
 @app.route("/run/<project>/<run_id>/export.json")

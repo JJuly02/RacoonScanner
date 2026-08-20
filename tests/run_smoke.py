@@ -616,6 +616,36 @@ def test_report_recon() -> None:
           ("Brak zebranych danych" in empty) or ("1.2.3.4:22" in empty))
 
 
+
+def test_report_tools(tmp_raw: str) -> None:
+    print("[report tools/logs]")
+    import os as _os
+    from raccoon import report as _report
+    _os.makedirs(tmp_raw, exist_ok=True)
+    with open(_os.path.join(tmp_raw, "nmap_h.xml"), "w", encoding="utf-8") as fh:
+        fh.write("<nmaprun args='nmap -sV -F h'><host><port portid='22'/></host></nmaprun>")
+    with open(_os.path.join(tmp_raw, "whois.txt"), "w", encoding="utf-8") as fh:
+        fh.write("Registrar: MarkMonitor Inc.\nName Server: A.IANA-SERVERS.NET\n")
+    fs = [Finding("Otwarty port 22", "open-port", Severity.INFO, Confidence.HIGH, "h:22", "nmap")]
+    compliance.annotate(fs)
+    meta = {"run_id": "r", "target": "h", "workflow": "Footprinting", "status": "done", "mode": "all",
+            "stages": [
+                {"name": "WHOIS", "adapter": "whois", "status": "done", "findings": 1, "note": "", "raw_files": ["whois.txt"]},
+                {"name": "Skan", "adapter": "nmap", "status": "done", "findings": 2, "note": "", "raw_files": ["nmap_h.xml"]},
+                {"name": "SQLi", "adapter": "sqlmap", "status": "skipped", "findings": 0,
+                 "note": "brak zależności: web_targets", "raw_files": []},
+            ]}
+    html = _report.generate(fs, meta, raw_dir=tmp_raw)
+    check("tools: sekcja narzędzi obecna", "Uruchomione narz" in html)
+    check("tools: kafelek nmap i whois", 't-name">nmap' in html and 't-name">whois' in html)
+    check("tools: wbudowany log nmap (XML)", "nmaprun" in html)
+    check("tools: wbudowany log whois", "MarkMonitor" in html)
+    check("tools: krok skipped pokazany", "ts-skipped" in html)
+    check("tools: bez stages brak kontenera narzędzi",
+          '<div class="tools-grid">' not in
+          _report.generate(fs, {"run_id": "r", "target": "h", "workflow": "w", "status": "done"}))
+
+
 def main() -> int:
     import tempfile
     findings = test_adapters()
@@ -637,6 +667,8 @@ def main() -> int:
         test_runner_modes(os.path.join(dm, "projects"))
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as dsd:
         test_runner_stop_dedup(os.path.join(dsd, "projects"))
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as dtr:
+        test_report_tools(os.path.join(dtr, "raw"))
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as dg:
         test_store_guard(os.path.join(dg, "projects"))
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as dr:

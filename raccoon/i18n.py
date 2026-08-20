@@ -164,6 +164,11 @@ _CAT: dict[str, dict[str, str]] = {
     "recon.nameservers": {"pl": "Nameservery", "en": "Nameservers"},
     "recon.open_ports": {"pl": "Otwarte porty", "en": "Open ports"},
     "recon.services": {"pl": "Wykryte uslugi do enumeracji", "en": "Services detected for enumeration"},
+    "report.tools": {"pl": "Uruchomione narzedzia i skrypty", "en": "Tools and scripts executed"},
+    "report.tools_note": {"pl": "Kroki pipeline, ktore sie wykonaly. Rozwin kafelek, aby zobaczyc surowe wyjscie narzedzia (podglad terminala).",
+                          "en": "Pipeline steps that ran. Expand a tile to see the tool\u0027s raw output (terminal preview)."},
+    "report.tool_noraw": {"pl": "Brak zapisanego wyjscia dla tego kroku.", "en": "No saved output for this step."},
+    "report.tool_truncated": {"pl": "... (obciete)", "en": "... (truncated)"},
     "report.of_total": {"pl": "z", "en": "of"},
 }
 

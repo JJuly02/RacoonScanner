@@ -121,6 +121,8 @@
       .stat-tile .lbl { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--rc-muted); }
       .theme-toggle { border-color: var(--rc-border); }
       .hint { font-size: .8rem; color: var(--rc-muted); }
+      .offcanvas { background: var(--rc-surface); color: var(--bs-body-color); }
+      .offcanvas .list-group-item { background: transparent; }
     </style>
 </head>
 <body>
@@ -140,8 +142,9 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.endpoint == 'rules' }}" href="{{ url_for('rules') }}">
+                        <a class="nav-link" href="#rulesDrawer" role="button" data-bs-toggle="offcanvas">
                             <i class="bi bi-shield-check me-1"></i>{{ t('nav.rules') }}
+                            {% if scope_rules %}<span class="badge rounded-pill bg-warning text-dark ms-1">{{ scope_rules|length }}</span>{% endif %}
                         </a>
                     </li>
                 </ul>
@@ -203,6 +206,49 @@
 
         {% block content %}{% endblock %}
     </div>
+
+    {% if session.get('user') %}
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="rulesDrawer" style="width:440px;max-width:94vw">
+        <div class="offcanvas-header border-bottom">
+            <h5 class="offcanvas-title"><i class="bi bi-shield-check me-2 text-accent"></i>{{ t('rules.title') }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="alert {{ 'alert-warning' if scope_rules else 'alert-secondary' }} py-2 small d-flex gap-2">
+                <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+                <span>{{ t('rules.active_warning') }}</span>
+            </div>
+            <form method="POST" action="{{ url_for('rules') }}">
+                <input type="hidden" name="next" value="{{ request.path }}">
+                <label class="form-label small mb-1">{{ t('rules.entries') }} <span class="hint">{{ t('index.one_per_line') }}</span></label>
+                <textarea class="form-control text-mono" name="allowlist" rows="8"
+                          placeholder="example.com&#10;*.example.com&#10;203.0.113.10">{{ scope_raw }}</textarea>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <span class="hint">{{ scope_rules|length }} {{ t('rules.active_entries') }}</span>
+                    <button class="btn btn-accent btn-sm" type="submit"><i class="bi bi-save"></i> {{ t('rules.save') }}</button>
+                </div>
+            </form>
+            <hr>
+            <div class="small">
+                <div class="fw-semibold mb-1">{{ t('rules.syntax') }}</div>
+                <ul class="mb-3 ps-3 text-muted">
+                    <li><code>example.com</code> - {{ t('rules.syntax_exact') }}</li>
+                    <li><code>*.example.com</code> - {{ t('rules.syntax_wild') }}</li>
+                    <li><code>203.0.113.10</code> - {{ t('rules.syntax_ip') }}</li>
+                    <li><code># tekst</code> - {{ t('rules.syntax_comment') }}</li>
+                </ul>
+                <div class="fw-semibold mb-1">{{ t('rules.active') }} ({{ scope_rules|length }})</div>
+                <ul class="list-group list-group-flush">
+                    {% for e in scope_rules %}
+                    <li class="list-group-item text-mono small px-0 py-1"><i class="bi bi-dot text-accent"></i>{{ e }}</li>
+                    {% else %}
+                    <li class="list-group-item text-muted small px-0 py-1">{{ t('rules.no_rules') }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>

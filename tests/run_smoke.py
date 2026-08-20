@@ -255,6 +255,10 @@ def test_flask(tmp_cwd: str) -> None:
     check("flask: /rules renderuje", r.status_code == 200 and "Reguły zakresu" in r.get_data(as_text=True))
     r = client.post("/rules", data={"allowlist": "example.com\n# c\n"}, follow_redirects=True)
     check("flask: zapis reguł", "Zapisano reguły" in r.get_data(as_text=True))
+    r = client.get("/")
+    body = r.get_data(as_text=True)
+    check("flask: dashboard ma szufladę reguł (offcanvas)", 'id="rulesDrawer"' in body)
+    check("flask: aktywny zakres oznaczony w navbarze", "bg-warning" in body and "example.com" in body)
     r = client.post("/", data={"project_name": "p2", "target": "scanme.nmap.org",
                                "workflow": "dns_web", "mode": "passive", "authorized": "on"},
                     follow_redirects=True)
@@ -496,7 +500,12 @@ def test_report_explain() -> None:
     html = _report.generate(fs, {"run_id": "r1", "target": "1.2.3.4", "workflow": "WF", "status": "done"})
     check("report: znaleziska mają rozwijane wyjaśnienie", "Co to znaczy?" in html)
     check("report: wyjaśnienie portu 22 (SSH)", "Port 22 - SSH" in html)
-    check("report: macierz zgodności ma rozwijane wyjaśnienia kontroli", 'class="exm"' in html)
+    check("report: wykres donut severity (SVG)", "<svg" in html and "stroke-dasharray" in html)
+    check("report: słupki wg kategorii", 'class="barfill"' in html)
+    check("report: tabela zasobów z portem i usługą (SSH)",
+          "SSH" in html and "Zdalny, szyfrowany" in html)
+    check("report: macierz bez rozwijanych podpowiedzi (przeniesione do zasobów)",
+          'class="exm"' not in html)
     check("report: nadal poprawny offline HTML",
           html.startswith("<!DOCTYPE html>") and "</html>" in html)
 

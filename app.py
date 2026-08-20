@@ -42,7 +42,14 @@ runner = Runner(store)
 @app.context_processor
 def _inject_i18n():
     lang = i18n.normalize(session.get("lang"))
-    return {"t": lambda key: i18n.t(key, lang), "current_lang": lang, "langs": i18n.LANGS}
+    scope_rules = scope.load_allowlist(PRIVATE_DIR)
+    return {
+        "t": lambda key: i18n.t(key, lang),
+        "current_lang": lang,
+        "langs": i18n.LANGS,
+        "scope_rules": scope_rules,
+        "scope_raw": scope.allowlist_text(PRIVATE_DIR),
+    }
 
 
 @app.route("/lang/<code>")
@@ -269,7 +276,7 @@ def rules():
         active = [e for e in entries if e.strip() and not e.strip().startswith("#")]
         auth.audit(PRIVATE_DIR, "rules_update", f"{len(active)} wpisów")
         flash(f"Zapisano reguły zakresu ({len(active)} aktywnych wpisów).", "success")
-        return redirect(url_for("rules"))
+        return redirect(request.form.get("next") or request.referrer or url_for("index"))
     return render_template(
         "rules.html",
         raw=scope.allowlist_text(PRIVATE_DIR),

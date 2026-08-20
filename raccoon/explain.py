@@ -128,3 +128,23 @@ def explain_finding(category: str, asset: str) -> str:
 
 def explain_control(control: str) -> str:
     return CONTROL_INFO.get(control, "")
+
+
+def service_for_asset(asset: str) -> tuple[str, str, str]:
+    """Best-effort (port, nazwa_uslugi, opis) na podstawie zasobu.
+
+    Obsluguje 'host:port', URL-e (schemat -> port) i zwykle hosty.
+    """
+    port = port_from_asset(asset)
+    if port is None:
+        a = (asset or "").lower()
+        if a.startswith("https://"):
+            port = 443
+        elif a.startswith("http://"):
+            port = 80
+    if port and port in PORT_INFO:
+        name, desc = PORT_INFO[port]
+        return (str(port), name, desc)
+    if port:
+        return (str(port), "", "")
+    return ("", "", "")

@@ -501,6 +501,10 @@ def test_report_explain() -> None:
     compliance.annotate(fs)
     html = _report.generate(fs, {"run_id": "r1", "target": "1.2.3.4", "workflow": "WF", "status": "done"})
     check("report: znaleziska mają rozwijane wyjaśnienie", "Co to znaczy?" in html)
+    hm = _report.generate(fs, {"run_id": "r", "target": "t", "workflow": "DNS + Web (lekki)",
+                               "status": "done", "mode": "all"})
+    check("report: nagłówek pokazuje tryb (Pełny) obok workflow",
+          "Tryb: <code>Pełny</code>" in hm and "DNS + Web (lekki)" in hm)
     check("report: wyjaśnienie portu 22 (SSH)", "Port 22 - SSH" in html)
     check("report: wykres donut severity (SVG)", "<svg" in html and "stroke-dasharray" in html)
     check("report: słupki wg kategorii", 'class="barfill"' in html)

@@ -45,6 +45,8 @@ def generate(findings: list[Finding], meta: dict, lang: str = "pl") -> str:
     frameworks = compliance.frameworks_summary(findings)
     run_id = html.escape(str(meta.get("run_id", "")))
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    mode_code = str(meta.get("mode") or "")
+    mode_label = L(f"mode.{mode_code}.label") if mode_code else str(meta.get("mode_label") or "-")
 
     tiles = "".join(
         f'<div class="tile"><span class="tile-num" style="color:{_SEV_COLOR[s]}">'
@@ -88,6 +90,8 @@ def generate(findings: list[Finding], meta: dict, lang: str = "pl") -> str:
         L_title=L("report.title"),
         L_target=L("common.target"),
         L_workflow=L("common.workflow"),
+        L_mode=L("common.mode"),
+        mode_label=html.escape(mode_label),
         L_run="Run",
         L_status=L("common.status"),
         L_generated=L("report.generated"),
@@ -385,6 +389,7 @@ footer{{margin-top:32px;color:var(--muted);font-size:12px;border-top:1px solid v
   <h1><span class="rc">Racoon</span>Scanner - {L_title}</h1>
   <div class="meta">
     {L_target}: <code>{target}</code> &nbsp;&middot;&nbsp; {L_workflow}: <code>{workflow}</code>
+    &nbsp;&middot;&nbsp; {L_mode}: <code>{mode_label}</code>
     &nbsp;&middot;&nbsp; {L_run}: <code>{run_id}</code> &nbsp;&middot;&nbsp; {L_status}: <code>{status}</code>
     &nbsp;&middot;&nbsp; {L_generated}: {generated}
   </div>
